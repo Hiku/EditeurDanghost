@@ -48,7 +48,6 @@ public class GameController : MonoBehaviour
 
     public GridData GetCurrentGridData()
     {
-        if (history == null) Debug.Log("a");
         return history[currentHistory];
     }
 
@@ -60,7 +59,6 @@ public class GameController : MonoBehaviour
         Color transparent = new Color(1, 1, 1, 0.2f);
 
         bool shouldPopOrFall = GetCurrentGridData().ShouldFall() || GetCurrentGridData().ShouldPop();
-        Debug.Log(GetCurrentGridData().ShouldFall());
         stepButtonImage.color = shouldPopOrFall ? opaque : transparent;
         allStepsButtonImage.color = shouldPopOrFall ? opaque : transparent;
 

@@ -80,8 +80,8 @@ public class GridData
 
     public bool IsEmpty()
     {
-        for(int y = 0; y < grid.Count; y++)
-            for(int x = 0; x < grid[y].Length; x++)
+        for (int y = 0; y < grid.Count; y++)
+            for (int x = 0; x < grid[y].Length; x++)
                 if (grid[y][x] != GridElement.EMPTY)
                     return false;
         return true;
@@ -128,7 +128,7 @@ public class GridData
 
     public GridElement[] NextsClone()
     {
-        return nexts.Where(e=>true).ToArray();
+        return nexts.Where(e => true).ToArray();
     }
 
     public GridData Clone()
@@ -255,7 +255,17 @@ public class GridData
                     }
                     if (shouldBottleDisappear)
                     {
+                        // On enlève la bouteille
                         SetElementAt(x, y, GridElement.EMPTY);
+
+                        // Mais aussi les ghosts autour de la bouteille
+                        for (int i = 0; i < neighborXs.Length; i++)
+                        {
+                            if (GetElementAt(neighborXs[i], neighborYs[i]) == GridElement.GHOST)
+                            {
+                                SetElementAt(neighborXs[i], neighborYs[i], GridElement.EMPTY);
+                            }
+                        }
                     }
                     // Le groupe devra disparaître à la fin.
                     // On le fait plus tard et pas dans cette loop au cas où plusieurs bouteilles y sont connectées
@@ -263,6 +273,35 @@ public class GridData
                 }
             }
         }
+
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                // Pour chaque ghost/echo restant
+                if (GetElementAt(x, y) == GridElement.GHOST)
+                {
+                    // S'ils ont des danghosts qui cassent autour d'eux
+                    GetNeighbors(x, y, out int[] neighborXs, out int[] neighborYs);
+                    bool shouldGhostDisappear = false;
+                    for (int i = 0; i < neighborXs.Length; i++)
+                    {
+                        if (groupIDs[neighborXs[i], neighborYs[i]] != -1 && shouldGroupDisappear[groupIDs[neighborXs[i], neighborYs[i]]])
+                        {
+                            shouldGhostDisappear = true;
+                            break;
+                        }
+                    }
+                    if (shouldGhostDisappear)
+                    {
+                        // On les enlève
+                        SetElementAt(x, y, GridElement.EMPTY);
+                    }
+                }
+            }
+        }
+
+
         int totalAmount = 0;
         int[] amountByGroup = new int[50];
         for (int x = 0; x < 5; x++)
