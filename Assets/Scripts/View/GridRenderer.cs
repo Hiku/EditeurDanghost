@@ -9,10 +9,17 @@ public class GridRenderer : MonoBehaviour
     [SerializeField]
     NextElementImage[] nextElements;
 
+    [SerializeField]
+    GameObject floorBar;
+
+    public Vector3 floorBarInitPos;
+
     GridElementImage[,] gridElements;
 
     public UnityEvent<int, int> onGridClicked;
     public UnityEvent<int> onNextClicked;
+
+    public int yOffset;
 
     public void Init()
     {
@@ -40,6 +47,8 @@ public class GridRenderer : MonoBehaviour
             nextElements[index].SubscribeToClick((index) => onNextClicked.Invoke(index));
             nextElements[index].SetIndex(index);
         }
+        yOffset = 0;
+        floorBarInitPos = floorBar.transform.position;
     }
 
     public void SubscribeToGridClicked(UnityAction<int, int> action)
@@ -58,7 +67,7 @@ public class GridRenderer : MonoBehaviour
         {
             for (int y = 0; y < 10; y++)
             {
-                gridElements[x, y].Render(data.GetElementAt(x, y));
+                gridElements[x, y].Render(data.GetElementAt(x, y - yOffset), y - yOffset < 0 || y - yOffset > 9);
             }
         }
 
@@ -66,6 +75,7 @@ public class GridRenderer : MonoBehaviour
         {
             nextElements[index].Render(data.GetNext(index));
         }
+        floorBar.transform.localPosition = new Vector3(0, yOffset * 90, 0);
     }
 
     // Update is called once per frame

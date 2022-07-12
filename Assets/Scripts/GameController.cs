@@ -27,12 +27,21 @@ public class GameController : MonoBehaviour
     Image inserButtonImage;
     [SerializeField]
     Image allClearButtonImage;
+
     [SerializeField]
     TMP_Text scoreText;
+
+    [SerializeField]
+    Image upButtonImage;
+    [SerializeField]
+    Image downButtonImage;
+    [SerializeField]
+    Image applyOffsetButtonImage;
 
     List<GridData> history;
     int currentHistory;
     bool insert;
+
 
     // Start is called before the first frame update
     void Start()
@@ -75,6 +84,8 @@ public class GameController : MonoBehaviour
         allClearButtonImage.color = GetCurrentGridData().IsEmpty() ? transparent : opaque;
 
         scoreResetImage.color = GetCurrentGridData().GetScore() > 0 ? opaque : transparent;
+
+        applyOffsetButtonImage.color = gridRenderer.yOffset != 0 ? opaque : transparent;
     }
 
     
@@ -132,6 +143,7 @@ public class GameController : MonoBehaviour
 
     public void OnGridClicked(int x, int y)
     {
+        y -= gridRenderer.yOffset;
         bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         if (Input.GetMouseButton(0) && !ctrl)
         {
@@ -195,6 +207,30 @@ public class GameController : MonoBehaviour
         if (currentHistory > 0)
         {
             currentHistory--;
+            UpdateEditorElements();
+
+        }
+    }
+
+    public void RiseOffset()
+    {
+        gridRenderer.yOffset++;
+        UpdateEditorElements();
+    }
+
+    public void LowerOffset()
+    {
+        gridRenderer.yOffset--;
+        UpdateEditorElements();
+    }
+
+    public void ApplyOffset()
+    {
+        if(gridRenderer.yOffset != 0)
+        {
+            AddCurrentToHistory();
+            GetCurrentGridData().AddToFloorHeight(-gridRenderer.yOffset);
+            gridRenderer.yOffset = 0;
             UpdateEditorElements();
 
         }

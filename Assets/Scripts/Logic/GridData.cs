@@ -26,6 +26,11 @@ public class GridData
         return nexts[index];
     }
 
+    public void AddToFloorHeight(int offset)
+    {
+        floorHeight += offset;
+    }
+
     public void SetNext(int index, GridElement value)
     {
         nexts[index] = value;

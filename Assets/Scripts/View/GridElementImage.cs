@@ -53,14 +53,15 @@ public class GridElementImage : MonoBehaviour, IPointerDownHandler, IPointerEnte
         
     }
 
-    public void Render(GridElement element)
+    public void Render(GridElement element, bool transparent = false)
     {
-        SetSprite((int)element);
+        SetSprite((int)element, transparent);
     }
 
-    public void SetSprite(int sprite)
+
+    public void SetSprite(int sprite, bool transparent = false)
     {
-        GetComponent<Image>().color = new Color(1, 1, 1, elementSprites[sprite] == null ? 0 : 1);
+        GetComponent<Image>().color = new Color(1, 1, 1, elementSprites[sprite] == null ? 0 : transparent?0.5f: 1);
         GetComponent<Image>().sprite = elementSprites[sprite];
     }
 
