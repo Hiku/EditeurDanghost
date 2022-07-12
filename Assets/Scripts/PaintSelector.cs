@@ -50,12 +50,12 @@ public class PaintSelector : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.A)) SelectPaint(GridElement.DANGHOST_BLUE);
-        if (Input.GetKeyDown(KeyCode.Z)) SelectPaint(GridElement.DANGHOST_RED);
-        if (Input.GetKeyDown(KeyCode.E)) SelectPaint(GridElement.DANGHOST_CYAN);
-        if (Input.GetKeyDown(KeyCode.R)) SelectPaint(GridElement.DANGHOST_YELLOW);
-        if (Input.GetKeyDown(KeyCode.T)) SelectPaint(GridElement.DANGHOST_PURPLE);
-        if (Input.GetKeyDown(KeyCode.Y)) SelectPaint(GridElement.DANGHOST_GREEN);
+        if (Input.GetKeyDown(KeyCode.Alpha1)) SelectPaint(GridElement.DANGHOST_BLUE);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SelectPaint(GridElement.DANGHOST_RED);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SelectPaint(GridElement.DANGHOST_CYAN);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) SelectPaint(GridElement.DANGHOST_YELLOW);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) SelectPaint(GridElement.DANGHOST_PURPLE);
+        if (Input.GetKeyDown(KeyCode.Alpha6)) SelectPaint(GridElement.DANGHOST_GREEN);
         if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
             SelectPaint(BottleEquivalent(GetCurrentPaint()));
         if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift))

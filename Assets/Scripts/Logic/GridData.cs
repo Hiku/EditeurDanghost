@@ -336,11 +336,12 @@ public class GridData
         return Pop();
     }
 
-    public void DoAllPopSteps()
+    public bool DoAllPopSteps()
     {
         int times = 0;
         while (DoOnePopStep() && times++ < 1000) ;
         if (times >= 1000) Debug.Log("boucle infinie");
+        return times != 0;
     }
 
 }
