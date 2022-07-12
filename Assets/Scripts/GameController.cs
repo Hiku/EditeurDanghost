@@ -17,6 +17,9 @@ public class GameController : MonoBehaviour
     [SerializeField]
     Image allStepsButtonImage;
     [SerializeField]
+    Image scoreResetImage;
+
+    [SerializeField]
     Image undoButtonImage;
     [SerializeField]
     Image redoButtonImage;
@@ -70,6 +73,8 @@ public class GameController : MonoBehaviour
         inserButtonImage.color = insert ? Color.green : Color.white;
 
         allClearButtonImage.color = GetCurrentGridData().IsEmpty() ? transparent : opaque;
+
+        scoreResetImage.color = GetCurrentGridData().GetScore() > 0 ? opaque : transparent;
     }
 
     
@@ -200,6 +205,15 @@ public class GameController : MonoBehaviour
         if (currentHistory < history.Count - 1)
         {
             currentHistory++;
+            UpdateEditorElements();
+        }
+    }
+    public void ResetScore()
+    {
+        if (GetCurrentGridData().GetScore() > 0)
+        {
+            AddCurrentToHistory();
+            GetCurrentGridData().ResetScore();
             UpdateEditorElements();
         }
     }

@@ -31,6 +31,13 @@ public class GridData
         nexts[index] = value;
     }
 
+    public void ResetScore()
+    {
+        currentChain = 0;
+        currentMultiplier = 0;
+        currentScore = 0;
+    }
+
     public int GetMultiplier()
     {
         return currentMultiplier;
