@@ -31,6 +31,16 @@ public class GridData
         nexts[index] = value;
     }
 
+    public int GetMultiplier()
+    {
+        return currentMultiplier;
+    }
+    public int GetScore()
+    {
+        return currentScore;
+    }
+
+
     public GridElement GetElementAt(int x, int y)
     {
         int actualY = y + floorHeight;
@@ -137,6 +147,9 @@ public class GridData
         clone.floorHeight = floorHeight;
         clone.grid = GridClone();
         clone.nexts = NextsClone();
+        clone.currentMultiplier = currentMultiplier;
+        clone.currentChain = currentChain;
+        clone.currentScore = currentScore;
         return clone;
     }
 

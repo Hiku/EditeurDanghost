@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using static GridUtils;
@@ -23,6 +24,8 @@ public class GameController : MonoBehaviour
     Image inserButtonImage;
     [SerializeField]
     Image allClearButtonImage;
+    [SerializeField]
+    TMP_Text scoreText;
 
     List<GridData> history;
     int currentHistory;
@@ -51,7 +54,6 @@ public class GameController : MonoBehaviour
         return history[currentHistory];
     }
 
-   
 
     public void UpdateButtonGrayed()
     {
@@ -78,7 +80,12 @@ public class GameController : MonoBehaviour
         inputUpdater.UpdateFromGridData(GetCurrentGridData());
 
         UpdateButtonGrayed();
+        UpdateScoreText();
+    }
 
+    public void UpdateScoreText()
+    {
+        scoreText.text = $"x{GetCurrentGridData().GetMultiplier()}\nScore: {GetCurrentGridData().GetScore()}";
     }
 
     public void OnNextClicked(int index)
