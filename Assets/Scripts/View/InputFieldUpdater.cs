@@ -4,6 +4,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static GridUtils;
 
 public class InputFieldUpdater : MonoBehaviour
 {
@@ -60,41 +61,41 @@ public class InputFieldUpdater : MonoBehaviour
 
     }*/
 
-    public string GetTranslation(GridData.GridElement element) => element switch
+    public string GetTranslation(GridElement element) => element switch
     {
-        GridData.GridElement.EMPTY => "",
-        GridData.GridElement.DANGHOST_BLUE => "Y0",
-        GridData.GridElement.DANGHOST_RED => "Y1",
-        GridData.GridElement.DANGHOST_CYAN => "Y2",
-        GridData.GridElement.DANGHOST_YELLOW => "Y3",
-        GridData.GridElement.DANGHOST_PURPLE => "Y4",
-        GridData.GridElement.DANGHOST_GREEN => "Y5",
-        GridData.GridElement.BOTTLE_BLUE => "E0",
-        GridData.GridElement.BOTTLE_RED => "E1",
-        GridData.GridElement.BOTTLE_CYAN => "E2",
-        GridData.GridElement.BOTTLE_YELLOW => "E3",
-        GridData.GridElement.BOTTLE_PURPLE => "E4",
-        GridData.GridElement.BOTTLE_GREEN => "E5",
-        GridData.GridElement.GHOST => "P",
+        GridElement.EMPTY => "",
+        GridElement.DANGHOST_BLUE => "Y0",
+        GridElement.DANGHOST_RED => "Y1",
+        GridElement.DANGHOST_CYAN => "Y2",
+        GridElement.DANGHOST_YELLOW => "Y3",
+        GridElement.DANGHOST_PURPLE => "Y4",
+        GridElement.DANGHOST_GREEN => "Y5",
+        GridElement.BOTTLE_BLUE => "E0",
+        GridElement.BOTTLE_RED => "E1",
+        GridElement.BOTTLE_CYAN => "E2",
+        GridElement.BOTTLE_YELLOW => "E3",
+        GridElement.BOTTLE_PURPLE => "E4",
+        GridElement.BOTTLE_GREEN => "E5",
+        GridElement.GHOST => "P",
         _ => ""
     };
-    public GridData.GridElement GetTranslation(string element) => element switch
+    public GridElement GetTranslation(string element) => element switch
     {
-        "" => GridData.GridElement.EMPTY,
-        "Y0" => GridData.GridElement.DANGHOST_BLUE,
-        "Y1" => GridData.GridElement.DANGHOST_RED,
-        "Y2" => GridData.GridElement.DANGHOST_CYAN,
-        "Y3" => GridData.GridElement.DANGHOST_YELLOW,
-        "Y4" => GridData.GridElement.DANGHOST_PURPLE,
-        "Y5" => GridData.GridElement.DANGHOST_GREEN,
-        "E0" => GridData.GridElement.BOTTLE_BLUE,
-        "E1" => GridData.GridElement.BOTTLE_RED,
-        "E2" => GridData.GridElement.BOTTLE_CYAN,
-        "E3" => GridData.GridElement.BOTTLE_YELLOW,
-        "E4" => GridData.GridElement.BOTTLE_PURPLE,
-        "E5" => GridData.GridElement.BOTTLE_GREEN,
-        "P" => GridData.GridElement.GHOST,
-        _ => GridData.GridElement.EMPTY
+        "" => GridElement.EMPTY,
+        "Y0" => GridElement.DANGHOST_BLUE,
+        "Y1" => GridElement.DANGHOST_RED,
+        "Y2" => GridElement.DANGHOST_CYAN,
+        "Y3" => GridElement.DANGHOST_YELLOW,
+        "Y4" => GridElement.DANGHOST_PURPLE,
+        "Y5" => GridElement.DANGHOST_GREEN,
+        "E0" => GridElement.BOTTLE_BLUE,
+        "E1" => GridElement.BOTTLE_RED,
+        "E2" => GridElement.BOTTLE_CYAN,
+        "E3" => GridElement.BOTTLE_YELLOW,
+        "E4" => GridElement.BOTTLE_PURPLE,
+        "E5" => GridElement.BOTTLE_GREEN,
+        "P" => GridElement.GHOST,
+        _ => GridElement.EMPTY
     };
 
     // Start is called before the first frame update

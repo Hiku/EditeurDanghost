@@ -1,33 +1,23 @@
 using System.Collections.Generic;
 using UnityEngine;
+using static GridUtils;
 
 public class GridData
 {
-    public enum GridElement
-    {
-        EMPTY,
-        DANGHOST_BLUE,
-        DANGHOST_RED,
-        DANGHOST_CYAN,
-        DANGHOST_YELLOW,
-        DANGHOST_PURPLE,
-        DANGHOST_GREEN,
-        BOTTLE_BLUE,
-        BOTTLE_RED,
-        BOTTLE_CYAN,
-        BOTTLE_YELLOW,
-        BOTTLE_PURPLE,
-        BOTTLE_GREEN,
-        GHOST
-    }
     private List<GridElement[]> grid;
     private GridElement[] nexts;
     private int floorHeight;
+    private int currentScore;
+    private int currentMultiplier;
+    private int currentChain;
 
     public GridData()
     {
         grid = new List<GridElement[]>();
         nexts = new GridElement[12];
+        currentScore = 0;
+        currentMultiplier = 0;
+        currentChain = 0;
     }
 
     public GridElement GetNext(int index)
@@ -62,10 +52,6 @@ public class GridData
         grid[actualY][x] = element;
     }
 
-    public GridElement[] MakeLine()
-    {
-        return new GridElement[5];
-    }
     public void AddLineBelow()
     {
         grid.Insert(0, MakeLine());
@@ -158,33 +144,198 @@ public class GridData
         return fell;
     }
 
-    public void GetNeighbors(int x, int y, out int[] neighborXs, out int[] neighborYs)
+
+    public bool Pop()
     {
-        List<int> nXs = new List<int>();
-        List<int> nYs = new List<int>();
-        if (y < 9)
+        // MakeGroupIDs crée des groupes de danghosts liés entre eux, en leur donnant un identifiant commun, sans prendre en compte les bouteilles.
+        int[,] groupIDs = MakeGroupIDs();
+
+
+        // À partir de son identifiant, est-ce que le groupe doit disparaître après cette étape ou non. Initialisé à false.
+        bool[] shouldGroupDisappear = new bool[50];
+        for (int x = 0; x < 5; x++)
         {
-            nXs.Add(x);
-            nYs.Add(y + 1);
+            for (int y = 0; y < 10; y++)
+            {
+                GridElement bottle = GetElementAt(x, y);
+                // Pour chaque bouteille de la grille
+                if (IsBottle(bottle))
+                {
+                    bool shouldBottleDisappear = false;
+                    // Son identifiant est créé de la même manière que celui des danghosts
+                    int bottleID = x * 10 + y;
+
+                    // Pour chaque élément autour de la bouteille
+                    GetNeighbors(x, y, out int[] neighborXs, out int[] neighborYs);
+                    for (int i = 0; i < neighborXs.Length; i++)
+                    {
+                        // Si c'est un danghost qui doit connecter avec la bouteille
+                        if (GetElementAt(neighborXs[i], neighborYs[i]) == DanghostEquivalent(bottle))
+                        {
+                            // On "groupe" la bouteille avec les danghosts
+                            // Ce qui va avoir pour effet de fusionner les groupes liés à la bouteille entre eux
+                            // Ce qui permet d'éviter de les compter comme des groupes différents dans les calculs de score
+                            int neighborID = groupIDs[neighborXs[i], neighborYs[i]];
+                            if (neighborID < bottleID)
+                            {
+                                if (bottleID < x * 10 + y)
+                                    ReplaceInGroupIDs(groupIDs, neighborID, bottleID);
+                                else
+                                    bottleID = neighborID;
+                            }
+                            else
+                            {
+                                ReplaceInGroupIDs(groupIDs, neighborID, bottleID);
+                            }
+                            // On dit que la bouteille doit disparaître à la fin
+                            shouldBottleDisappear = true;
+                        }
+                    }
+                    if (shouldBottleDisappear)
+                    {
+                        SetElementAt(x, y, GridElement.EMPTY);
+                    }
+                    // Le groupe devra disparaître à la fin.
+                    // On le fait plus tard et pas dans cette loop au cas où plusieurs bouteilles y sont connectées
+                    shouldGroupDisappear[bottleID] = shouldBottleDisappear;
+                }
+            }
         }
-        if (y > 0)
+        int totalAmount = 0;
+        int[] amountByGroup = new int[50];
+        for (int x = 0; x < 5; x++)
         {
-            nXs.Add(x);
-            nYs.Add(y - 1);
+            for (int y = 0; y < 10; y++)
+            {
+                // Pour chaque danghost qui doit disparaître
+                if (groupIDs[x, y] != -1 && shouldGroupDisappear[groupIDs[x, y]])
+                {
+                    totalAmount++;
+                    // On compte le danghost comme faisant partie de ce groupe
+                    amountByGroup[groupIDs[x, y]]++;
+                    // Et on l'efface.
+                    SetElementAt(x, y, GridElement.EMPTY);
+                }
+            }
         }
-        neighborXs = nXs.ToArray();
-        neighborYs = nYs.ToArray();
+        bool disappeared = false;
+        // Calcul du score : Pour chaque groupe, dans le même ordre que dans le jeu
+        for (int i = 0; i < amountByGroup.Length; i++)
+        {
+            if (shouldGroupDisappear[i])
+            {
+                if (currentMultiplier > 0)
+                {
+                    // Si quelque chose a déjà cassé, c'est que c'est une chaîne, donc on augmente le multiplier, et la chaîne
+                    currentMultiplier += 5 + currentChain * 2;
+                    currentChain++;
+                }
+                disappeared = true;
+            }
+        }
+        // Une fois les multipliers augmentés, on augmente le score
+        currentScore += (totalAmount * (totalAmount + 1) / 2 + totalAmount * currentMultiplier) * 100;
+        // On augmente aussi le multiplier pour chaque danghost qui a cassé
+        currentMultiplier += totalAmount;
+        Debug.Log(currentMultiplier);
+        Debug.Log(currentScore);
+        return disappeared;
+    }
+    /// <summary>
+    /// Crée les groupes de danghosts, liés entre eux en leur donnant un identifiant commun, sans prendre en compte les bouteilles.
+    /// </summary>
+    /// <returns>Un array à deux dimensions [x, y] avec l'identifiant de chaque groupe, selon l'ordre dans lequel il devrait casser.</returns>
+    public int[,] MakeGroupIDs()
+    {
+        int[,] groupIDs = MakeGroupIDsBase();
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (groupIDs[x, y] != -1)
+                {
+                    if (GetAbove(x, y, out int xAbove, out int yAbove))
+                        TryToGroup(groupIDs, x, y, xAbove, yAbove);
+                    if (GetUpperRight(x, y, out int xUR, out int yUR))
+                        TryToGroup(groupIDs, x, y, xUR, yUR);
+                    if (GetLowerRight(x, y, out int xLR, out int yLR))
+                        TryToGroup(groupIDs, x, y, xLR, yLR);
+                }
+            }
+        }
+        return groupIDs;
     }
 
-    /*public bool Pop()
+    /// <summary>
+    /// Place chaque danghost dans son propre groupe, seul.
+    /// </summary>
+    /// <returns>Un array à deux dimensions [x, y] avec l'identifiant de chaque danghost, selon l'ordre dans lequel il devrait casser.</returns>
+    public int[,] MakeGroupIDsBase()
     {
+        int[,] groupIDs = new int[5, 10];
 
-    }*/
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (IsDanghost(GetElementAt(x, y)))
+                    groupIDs[x, y] = x * 10 + y;
+                else
+                    groupIDs[x, y] = -1;
+            }
+        }
+        return groupIDs;
+    }
+
+    /// <summary>
+    /// Essaie de grouper 2 danghosts.
+    /// S'ils sont de la même couleur, leurs groupes respectifs sont fusionnés sous le même ID, qui est le minimum entre les deux.
+    /// </summary>
+    /// <param name="groupIDs">Les identifiants de groupes jusque-là. Sera modifié pour fusionner les groupes si besoin.</param>
+    /// <param name="x">La position x du premier danghost.</param>
+    /// <param name="y">La position y du premier danghost.</param>
+    /// <param name="x2">La position x du deuxième danghost.</param>
+    /// <param name="y2">La position y du deuxième danghost.</param>
+    public void TryToGroup(int[,] groupIDs, int x, int y, int x2, int y2)
+    {
+        if (GetElementAt(x, y) == GetElementAt(x2, y2))
+        {
+            if (groupIDs[x2, y2] < groupIDs[x, y])
+            {
+                if (groupIDs[x, y] == x * 10 + y)
+                    groupIDs[x, y] = groupIDs[x2, y2];
+                else
+                    ReplaceInGroupIDs(groupIDs, groupIDs[x, y], groupIDs[x2, y2]);
+            }
+            else
+            {
+                if (groupIDs[x2, y2] == x2 * 10 + y2)
+                    groupIDs[x2, y2] = groupIDs[x, y];
+                else
+                    ReplaceInGroupIDs(groupIDs, groupIDs[x2, y2], groupIDs[x, y]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Change l'identifiant de chaque élément du groupe "from" par "to".
+    /// </summary>
+    /// <param name="groupIDs"></param>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    public void ReplaceInGroupIDs(int[,] groupIDs, int from, int to)
+    {
+        for (int x = 0; x < 5; x++)
+            for (int y = 0; y < 10; y++)
+                if (groupIDs[x, y] == from) groupIDs[x, y] = to;
+    }
 
     public bool DoOnePopStep()
     {
-        return Fall();
+        if (Fall()) return true;
+        return Pop();
     }
+
     public void DoAllPopSteps()
     {
         int times = 0;

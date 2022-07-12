@@ -22,7 +22,6 @@ public class GridRenderer : MonoBehaviour
         var rectTransform = GetComponent<RectTransform>();
 
         int danghostSpace = (int)(Screen.width / 1920f * 90f);
-        Debug.Log(danghostSpace);
         for (int x = 0; x < 5; x++)
         {
             for (int y = 0; y < 10; y++)

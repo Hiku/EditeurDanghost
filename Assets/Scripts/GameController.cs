@@ -1,4 +1,5 @@
 using UnityEngine;
+using static GridUtils;
 
 public class GameController : MonoBehaviour
 {
@@ -34,7 +35,7 @@ public class GameController : MonoBehaviour
         }
         else if (Input.GetMouseButton(1))
         {
-            currentGridData.SetNext(index, GridData.GridElement.EMPTY);
+            currentGridData.SetNext(index, GridElement.EMPTY);
         }
         else if (Input.GetMouseButton(2) || ctrl)
         {
@@ -53,7 +54,7 @@ public class GameController : MonoBehaviour
         }
         else if (Input.GetMouseButton(1))
         {
-            currentGridData.SetElementAt(x, y, GridData.GridElement.EMPTY);
+            currentGridData.SetElementAt(x, y, GridElement.EMPTY);
         }
         else if (Input.GetMouseButton(2) || ctrl)
         {
@@ -65,26 +66,6 @@ public class GameController : MonoBehaviour
         //Debug.Log($"{x} ; {y}");
     }
 
-
-    public void OnNextClicked(int x, int y)
-    {
-        bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-        if (Input.GetMouseButton(0) && !ctrl)
-        {
-            currentGridData.SetElementAt(x, y, paintSelector.GetCurrentPaint());
-        }
-        else if (Input.GetMouseButton(1))
-        {
-            currentGridData.SetElementAt(x, y, GridData.GridElement.EMPTY);
-        }
-        else if (Input.GetMouseButton(2) || ctrl)
-        {
-            paintSelector.SelectPaint(currentGridData.GetElementAt(x, y));
-        }
-        gridRenderer.Render(currentGridData);
-
-        //Debug.Log($"{x} ; {y}");
-    }
 
     public void OnStepButtonClicked()
     {

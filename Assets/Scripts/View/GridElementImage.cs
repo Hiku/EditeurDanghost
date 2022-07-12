@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static GridData;
+using static GridUtils;
 
 public class GridElementImage : MonoBehaviour, IPointerDownHandler, IPointerEnterHandler, IPointerExitHandler
 {
