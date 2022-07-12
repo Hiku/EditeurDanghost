@@ -37,6 +37,29 @@ public class GridData
         return grid[actualY][x];
     }
 
+    public int GetHighestLine()
+    {
+        return grid.Count - floorHeight;
+    }
+
+    public void LowerAllElementsAbove(int x, int y)
+    {
+        int maxY = GetHighestLine();
+        for (int i = y; i < maxY; i++)
+        {
+            SetElementAt(x, i, GetElementAt(x, i + 1));
+        }
+    }
+    public void PushAllElementsAbove(int x, int y)
+    {
+        int maxY = GetHighestLine();
+        for (int i = maxY; i > y; i--)
+        {
+            SetElementAt(x, i, GetElementAt(x, i - 1));
+        }
+        //SetElementAt(x, y, GridElement.EMPTY);
+    }
+
     public void SetElementAt(int x, int y, GridElement element)
     {
         int actualY = y + floorHeight;
@@ -111,7 +134,7 @@ public class GridData
     {
         for (int i = 0; i < 5; i++)
         {
-            if (GetColumnHoles(i) >= 0) return true;
+            if (GetColumnHoles(i) > 0) return true;
         }
         return false;
     }
@@ -142,6 +165,11 @@ public class GridData
         for (int i = 0; i < 5; i++)
             fell |= Fall(i);
         return fell;
+    }
+
+    public bool ShouldPop()
+    {
+        return Clone().Pop();
     }
 
 
@@ -237,8 +265,8 @@ public class GridData
         currentScore += (totalAmount * (totalAmount + 1) / 2 + totalAmount * currentMultiplier) * 100;
         // On augmente aussi le multiplier pour chaque danghost qui a cassé
         currentMultiplier += totalAmount;
-        Debug.Log(currentMultiplier);
-        Debug.Log(currentScore);
+        //Debug.Log(currentMultiplier);
+        //Debug.Log(currentScore);
         return disappeared;
     }
     /// <summary>
