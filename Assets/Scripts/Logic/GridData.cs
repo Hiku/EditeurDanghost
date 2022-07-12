@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using static GridUtils;
 
@@ -42,7 +43,7 @@ public class GridData
         return grid.Count - floorHeight;
     }
 
-    public void LowerAllElementsAbove(int x, int y)
+    public void PullAllGridElements(int x, int y)
     {
         int maxY = GetHighestLine();
         for (int i = y; i < maxY; i++)
@@ -50,7 +51,7 @@ public class GridData
             SetElementAt(x, i, GetElementAt(x, i + 1));
         }
     }
-    public void PushAllElementsAbove(int x, int y)
+    public void PushAllGridElements(int x, int y)
     {
         int maxY = GetHighestLine();
         for (int i = maxY; i > y; i--)
@@ -58,6 +59,32 @@ public class GridData
             SetElementAt(x, i, GetElementAt(x, i - 1));
         }
         //SetElementAt(x, y, GridElement.EMPTY);
+    }
+
+    public void PushAllNextElements(int index)
+    {
+        for (int i = nexts.Length - 2; i >= index; i--)
+        {
+            SetNext(i + 1, GetNext(i));
+        }
+    }
+
+    public void PullAllNextElements(int index)
+    {
+        for (int i = index; i < nexts.Length - 1; i++)
+        {
+            SetNext(i, GetNext(i + 1));
+        }
+        SetNext(nexts.Length - 1, GridElement.EMPTY);
+    }
+
+    public bool IsEmpty()
+    {
+        for(int y = 0; y < grid.Count; y++)
+            for(int x = 0; x < grid[y].Length; x++)
+                if (grid[y][x] != GridElement.EMPTY)
+                    return false;
+        return true;
     }
 
     public void SetElementAt(int x, int y, GridElement element)
@@ -98,11 +125,18 @@ public class GridData
         }
         return clone;
     }
+
+    public GridElement[] NextsClone()
+    {
+        return nexts.Where(e=>true).ToArray();
+    }
+
     public GridData Clone()
     {
         GridData clone = new GridData();
         clone.floorHeight = floorHeight;
         clone.grid = GridClone();
+        clone.nexts = NextsClone();
         return clone;
     }
 

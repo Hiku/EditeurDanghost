@@ -21,6 +21,8 @@ public class GameController : MonoBehaviour
     Image redoButtonImage;
     [SerializeField]
     Image inserButtonImage;
+    [SerializeField]
+    Image allClearButtonImage;
 
     List<GridData> history;
     int currentHistory;
@@ -50,6 +52,8 @@ public class GameController : MonoBehaviour
         return history[currentHistory];
     }
 
+   
+
     public void UpdateButtonGrayed()
     {
         Color opaque = Color.white;
@@ -64,7 +68,11 @@ public class GameController : MonoBehaviour
         redoButtonImage.color = currentHistory < history.Count - 1 ? opaque : transparent;
 
         inserButtonImage.color = insert ? Color.green : Color.white;
+
+        allClearButtonImage.color = GetCurrentGridData().IsEmpty() ? transparent : opaque;
     }
+
+    
 
     public void UpdateEditorElements()
     {
@@ -80,16 +88,35 @@ public class GameController : MonoBehaviour
         bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
         if (Input.GetMouseButton(0) && !ctrl)
         {
-            GetCurrentGridData().SetNext(index, paintSelector.GetCurrentPaint());
+            if (insert || GetCurrentGridData().GetNext(index) != paintSelector.GetCurrentPaint())
+            {
+                AddCurrentToHistory();
+                if (insert) GetCurrentGridData().PushAllNextElements(index);
+                GetCurrentGridData().SetNext(index, paintSelector.GetCurrentPaint());
+            }
         }
         else if (Input.GetMouseButton(1))
         {
-            GetCurrentGridData().SetNext(index, GridElement.EMPTY);
+            if (insert || GetCurrentGridData().GetNext(index) != GridElement.EMPTY)
+            {
+                AddCurrentToHistory();
+                if (insert) GetCurrentGridData().PullAllNextElements(index);
+                else
+                    GetCurrentGridData().SetNext(index, GridElement.EMPTY);
+            }
         }
         else if (Input.GetMouseButton(2) || ctrl)
         {
             paintSelector.SelectPaint(GetCurrentGridData().GetNext(index));
         }
+        UpdateEditorElements();
+    }
+
+    public void AllClear()
+    {
+        if (GetCurrentGridData().IsEmpty()) return;
+        AddCurrentToHistory();
+        history[history.Count - 1] = new GridData();
         UpdateEditorElements();
     }
 
@@ -101,7 +128,7 @@ public class GameController : MonoBehaviour
             if (insert || GetCurrentGridData().GetElementAt(x, y) != paintSelector.GetCurrentPaint())
             {
                 AddCurrentToHistory();
-                if (insert) GetCurrentGridData().PushAllElementsAbove(x, y);
+                if (insert) GetCurrentGridData().PushAllGridElements(x, y);
                 GetCurrentGridData().SetElementAt(x, y, paintSelector.GetCurrentPaint());
             }
         }
@@ -110,7 +137,7 @@ public class GameController : MonoBehaviour
             if (insert || GetCurrentGridData().GetElementAt(x, y) != GridElement.EMPTY)
             {
                 AddCurrentToHistory();
-                if (insert) GetCurrentGridData().LowerAllElementsAbove(x, y);
+                if (insert) GetCurrentGridData().PullAllGridElements(x, y);
                 else GetCurrentGridData().SetElementAt(x, y, GridElement.EMPTY);
             }
         }
