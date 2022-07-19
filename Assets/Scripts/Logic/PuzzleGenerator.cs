@@ -13,7 +13,14 @@ public class PuzzleGenerator
     public float importanceOfHighBottles;
     public float importanceOfNotHavingGhosts;
     public float importanceOfClearing;
-    
+    public bool isClearingNecessary;
+    public bool isNotHavingGhostsNecessary;
+    public bool isHavingAllBottlesOnTopNecessary;
+    public bool isHaving1BottlePerChainNecessary;
+    public bool isRespectingTicksGoalNecessary;
+    public int nextPieceAmount;
+    public bool shouldBePlayableWithoutHold;
+    public bool shouldNextPiecesBeOnlyBottles;
     public PuzzleGenerator()
     {
         maxHeight = 6;
@@ -25,15 +32,16 @@ public class PuzzleGenerator
         importanceOfHighBottles = 1f;
         importanceOfNotHavingGhosts = 0f;
         importanceOfClearing = 1f;
-        // is clearing necessary (if it doesn't clear, then another chain is generated)
-        // is not having ghosts necessary
-        // is having high bottles necessary
-        // is having 1 bottle per chain necessary
-        // is respecting the ticks goal necessary
-        // how many nexts pieces
-        // use of hold
-
+        isClearingNecessary = false;
+        isNotHavingGhostsNecessary = false;
+        isHavingAllBottlesOnTopNecessary = false;
+        isHaving1BottlePerChainNecessary = false;
+        isRespectingTicksGoalNecessary = true;
+        nextPieceAmount = 4;
+        shouldBePlayableWithoutHold = true;
+        shouldNextPiecesBeOnlyBottles = true;
     }
+
     // Generates a puzzle based on the parameters
     public GridData Generate()
     {
@@ -70,14 +78,68 @@ public class PuzzleGenerator
                 grid = foundGrid;
             }
         }
+        // If the grid doesn't respect every hard conditions, retry
+        if (!RespectsParameterConditions(grid))
+        {
+            Debug.Log("trying again");
+            return Generate();
+        }
+
+
         // Score should be the goal of the puzzle
         int score = grid.GetPopScore();
         // For now we use a Debug.Log to show it to the user, should update this
         Debug.Log(score);
-        
+
         // Transforms the chain into a puzzle by placing a few pieces the hand of the user
-        grid = PlaceIntoNext(grid);
+        grid = PlaceIntoNext(grid, nextPieceAmount);
         return grid;
+    }
+
+    private bool RespectsParameterConditions(GridData grid)
+    {
+        GridData popper = grid.Clone();
+        popper.ResetScore();
+        int multipleBottlePerChainMalus = 0;
+        int bottleHeightMalus = 0;
+        for (int x = 0; x < 5; x++)
+        {
+            int bottleAmount = 0;
+            for (int y = 0; y < 10; y++)
+            {
+                if (IsBottle(grid.GetElementAt(x, y))) bottleAmount++;
+                else if (grid.GetElementAt(x, y) != GridElement.EMPTY) bottleHeightMalus += bottleAmount;
+            }
+        }
+        int ticks = 0;
+        bool over = false;
+        while (!over)
+        {
+            if (!popper.ShouldFall())
+            {
+                multipleBottlePerChainMalus += System.Math.Max(popper.FirstBottlesAmount() - 1, 0);
+                if (popper.ShouldPop())
+                {
+                    ticks++;
+                }
+            }
+
+            if (!popper.DoOnePopStep())
+            {
+                over = true;
+            }
+        }
+        if (isRespectingTicksGoalNecessary && ticks != ticksGoal)
+            return false;
+        if (isHaving1BottlePerChainNecessary && multipleBottlePerChainMalus > 0)
+            return false;
+        if (isHavingAllBottlesOnTopNecessary && bottleHeightMalus > 0)
+            return false;
+        if (isNotHavingGhostsNecessary && grid.GetAmountOf(GridElement.GHOST) > 0)
+            return false;
+        if (isClearingNecessary && !popper.IsEmpty())
+            return false;
+        return true;
     }
 
     // Gets the score of a chain based on the parameters
@@ -195,6 +257,10 @@ public class PuzzleGenerator
                 {
                     chances[x] = 0;
                 }
+                if(shouldNextPiecesBeOnlyBottles && IsDanghost(clone.GetElementAt(x, y)))
+                {
+                    chances[x] = 0;
+                }
                 totalChances += chances[x];
             }
             float random = Random.Range(0, totalChances);
@@ -221,7 +287,8 @@ public class PuzzleGenerator
         // we can easily randomize the piece order and sometimes force the player to use the hold button.
         while (amountInElementsByColumn > 0)
         {
-            if (Random.Range(0, 3) == 0)
+            // To simplify the code, if the puzzle should be playable without the use of hold, we just use the hold everytime
+            if (shouldBePlayableWithoutHold || Random.Range(0, 3) == 0)
             {
                 // Hold and Unhold
                 if (hold == GridElement.EMPTY)
