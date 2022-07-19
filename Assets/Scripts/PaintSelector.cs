@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using static GridUtils;
+using static GeneratorGridUtils;
 
 public class PaintSelector : MonoBehaviour
 {

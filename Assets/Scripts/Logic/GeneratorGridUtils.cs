@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GridUtils
+public class GeneratorGridUtils
 {
     public enum GridElement
     {

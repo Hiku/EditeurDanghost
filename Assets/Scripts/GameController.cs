@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static GridUtils;
+using static GeneratorGridUtils;
 
 public class GameController : MonoBehaviour
 {
@@ -42,7 +42,7 @@ public class GameController : MonoBehaviour
     [SerializeField]
     Image applyOffsetButtonImage;
 
-    List<GridData> history;
+    List<GeneratorGridData> history;
     int currentHistory;
     bool insert;
 
@@ -53,9 +53,9 @@ public class GameController : MonoBehaviour
         //currentPaint = GridData.GridElement.DANGHOST_BLUE;
         //currentGridData.SetElementAt(4, 3, GridData.GridElement.BOTTLE_CYAN);
         //Debug.Log(gridData.GetElementAt(4, 3));
-        history = new List<GridData>
+        history = new List<GeneratorGridData>
         {
-            new GridData()
+            new GeneratorGridData()
         };
         insert = false;
         currentHistory = 0;
@@ -67,7 +67,7 @@ public class GameController : MonoBehaviour
 
     }
 
-    public GridData GetCurrentGridData()
+    public GeneratorGridData GetCurrentGridData()
     {
         return history[currentHistory];
     }
@@ -147,7 +147,7 @@ public class GameController : MonoBehaviour
     {
         if (GetCurrentGridData().IsEmpty()) return;
         AddCurrentToHistory();
-        history[history.Count - 1] = new GridData();
+        history[history.Count - 1] = new GeneratorGridData();
         UpdateEditorElements();
     }
 
@@ -184,7 +184,7 @@ public class GameController : MonoBehaviour
     {
         AddToHistory(GetCurrentGridData().Clone());
     }
-    public void AddToHistory(GridData gridData)
+    public void AddToHistory(GeneratorGridData gridData)
     {
         if (currentHistory != history.Count - 1)
             history.RemoveRange(currentHistory + 1, history.Count - currentHistory - 1);
@@ -194,7 +194,7 @@ public class GameController : MonoBehaviour
 
     public void OnStepButtonClicked()
     {
-        GridData newGD = GetCurrentGridData().Clone();
+        GeneratorGridData newGD = GetCurrentGridData().Clone();
         if (newGD.DoOnePopStep())
         {
             AddToHistory(newGD);
@@ -203,7 +203,7 @@ public class GameController : MonoBehaviour
     }
     public void OnAllStepsButtonClicked()
     {
-        GridData newGD = GetCurrentGridData().Clone();
+        GeneratorGridData newGD = GetCurrentGridData().Clone();
         if (newGD.DoAllPopSteps())
         {
             AddToHistory(newGD);
@@ -293,7 +293,7 @@ public class GameController : MonoBehaviour
     {
         // Creates a generator with its basic parameters, and gets a puzzle out of it
         PuzzleGenerator generator = new PuzzleGenerator();
-        GridData newGrid = generator.Generate();
+        GeneratorGridData newGrid = generator.Generate();
         if (newGrid != null)
         {
             AddCurrentToHistory();

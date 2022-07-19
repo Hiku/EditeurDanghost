@@ -20,18 +20,23 @@ public class GridRenderer : MonoBehaviour
     public UnityEvent<int> onNextClicked;
 
     public int yOffset;
+    public int width, height;
+    public int nextAmount;
 
-    public void Init()
+    public void Init(int width = 5, int height = 10, int nextAmount = 12)
     {
+        this.width = width;
+        this.height = height;
+        this.nextAmount = nextAmount;
         onGridClicked = new UnityEvent<int, int>();
         onNextClicked = new UnityEvent<int>();
-        gridElements = new GridElementImage[5, 10];
-        var rectTransform = GetComponent<RectTransform>();
+        gridElements = new GridElementImage[width, height];
+        RectTransform rectTransform = GetComponent<RectTransform>();
 
         int danghostSpace = (int)(Screen.width / 1920f * 90f);
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 gridElements[x, y] = Instantiate(gridElementPrefab, transform).GetComponent<GridElementImage>();
                 gridElements[x, y].Init();
@@ -41,7 +46,7 @@ public class GridRenderer : MonoBehaviour
                 gridElements[x, y].name = $"{x}, {y}";
             }
         }
-        for (int index = 0; index < 12; index++)
+        for (int index = 0; index < nextAmount; index++)
         {
             nextElements[index].Init();
             nextElements[index].SubscribeToClick((index) => onNextClicked.Invoke(index));
@@ -61,17 +66,17 @@ public class GridRenderer : MonoBehaviour
         onNextClicked.AddListener(action);
     }
 
-    public void Render(GridData data)
+    public void Render(GeneratorGridData data)
     {
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 gridElements[x, y].Render(data.GetElementAt(x, y - yOffset), y - yOffset < 0 || y - yOffset > 9);
             }
         }
 
-        for (int index = 0; index < 12; index++)
+        for (int index = 0; index < nextAmount; index++)
         {
             nextElements[index].Render(data.GetNext(index));
         }

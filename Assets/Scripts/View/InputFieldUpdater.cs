@@ -1,29 +1,29 @@
 using System.Text;
 using TMPro;
 using UnityEngine;
-using static GridUtils;
+using static GeneratorGridUtils;
 
 public class InputFieldUpdater : MonoBehaviour
 {
 
-    public void UpdateFromGridData(GridData data)
+    public void UpdateFromGridData(GeneratorGridData data)
     {
 
         GetComponent<TMP_InputField>().text = GetPrefillGridText(data);
     }
 
-    public void UpdateFromGrowData(GridData data)
+    public void UpdateFromGrowData(GeneratorGridData data)
     {
         GetComponent<TMP_InputField>().text = GetGrowGridText(data);
     }
 
-    public void UpdateFromNextData(GridData data)
+    public void UpdateFromNextData(GeneratorGridData data)
     {
         GetComponent<TMP_InputField>().text = GetNextText(data);
     }
 
 
-    public string GetPrefillGridText(GridData data)
+    public static string GetPrefillGridText(GeneratorGridData data)
     {
         StringBuilder gridTextBuilder = new StringBuilder();
         bool empty = true;
@@ -45,7 +45,7 @@ public class InputFieldUpdater : MonoBehaviour
         }
         return gridTextBuilder.ToString().Replace("\n\n", "\n");
     }
-    public string GetGrowGridText(GridData data)
+    public static string GetGrowGridText(GeneratorGridData data)
     {
         StringBuilder gridTextBuilder = new StringBuilder();
         for (int y = -1; y >= data.GetLowestLine(); y--)
@@ -61,13 +61,13 @@ public class InputFieldUpdater : MonoBehaviour
         while(gridText.EndsWith("\n,,,,"))gridText = gridText.Substring(0,gridText.Length-5);
         return gridText;
     }
-    public string GetNextText(GridData data)
+    public static string GetNextText(GeneratorGridData data)
     {
         StringBuilder gridTextBuilder = new StringBuilder();
         int nextAmount = 0;
         for (int index = 0; index < 12; index++)
         {
-            if (data.GetNext(index) != GridElement.EMPTY) nextAmount = index;
+            if (data.GetNext(index) != GridElement.EMPTY) nextAmount = index + 1;
         }
 
         for (int index = 0; index < nextAmount; index++)
@@ -77,7 +77,7 @@ public class InputFieldUpdater : MonoBehaviour
         return gridTextBuilder.ToString();
     }
 
-    public void FillWithPrefillGridText(GridData data)
+    public void FillWithPrefillGridText(GeneratorGridData data)
     {
         string text = GetComponent<TMP_InputField>().text;
         text = text.Replace("\r", "");
@@ -94,7 +94,7 @@ public class InputFieldUpdater : MonoBehaviour
             }
         }
     }
-    public void FillWithGrowGridText(GridData data)
+    public void FillWithGrowGridText(GeneratorGridData data)
     {
         string text = GetComponent<TMP_InputField>().text;
         text = text.Replace("\r", "");
@@ -112,7 +112,7 @@ public class InputFieldUpdater : MonoBehaviour
             }
         }
     }
-    public void FillWithNextText(GridData data)
+    public void FillWithNextText(GeneratorGridData data)
     {
         string text = GetComponent<TMP_InputField>().text;
         text = text.Replace("\r", "");
@@ -129,7 +129,7 @@ public class InputFieldUpdater : MonoBehaviour
 
 
 
-    public string GetTranslation(GridElement element) => element switch
+    public static string GetTranslation(GridElement element) => element switch
     {
         GridElement.EMPTY => "",
         GridElement.DANGHOST_BLUE => "Y3",

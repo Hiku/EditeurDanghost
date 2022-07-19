@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using static GridUtils;
+using static GeneratorGridUtils;
 
 public class PuzzleGenerator
 {
@@ -21,29 +21,34 @@ public class PuzzleGenerator
     public int nextPieceAmount;
     public bool shouldBePlayableWithoutHold;
     public bool shouldNextPiecesBeOnlyBottles;
+    public int retriesForEachEnhancement;
+    public int enhancementAmount;
     public PuzzleGenerator()
     {
+        
         maxHeight = 6;
         minHeight = 4;
         colorAmount = 6;
         ticksGoal = 6;
         importanceOfTicksGoal = 0f;
-        importanceOf1BottlePerChain = 1f;
+        importanceOf1BottlePerChain = 0.5f;
         importanceOfHighBottles = 1f;
         importanceOfNotHavingGhosts = 0f;
         importanceOfClearing = 1f;
-        isClearingNecessary = false;
+        isClearingNecessary = true;
         isNotHavingGhostsNecessary = false;
         isHavingAllBottlesOnTopNecessary = false;
         isHaving1BottlePerChainNecessary = false;
-        isRespectingTicksGoalNecessary = true;
+        isRespectingTicksGoalNecessary = false;
         nextPieceAmount = 4;
-        shouldBePlayableWithoutHold = true;
-        shouldNextPiecesBeOnlyBottles = true;
+        shouldBePlayableWithoutHold = false;
+        shouldNextPiecesBeOnlyBottles = false;
+        retriesForEachEnhancement = 50;
+        enhancementAmount = 50;
     }
 
     // Generates a puzzle based on the parameters
-    public GridData Generate()
+    public GeneratorGridData Generate()
     {
         // First, decides of the heights for each column
         int[] maxHeights = new int[5];
@@ -52,7 +57,7 @@ public class PuzzleGenerator
             maxHeights[i] = Random.Range(minHeight, maxHeight + 1);
         }
         // Then make a grid with random danghosts
-        GridData grid = new GridData();
+        GeneratorGridData grid = new GeneratorGridData();
         for (int x = 0; x < 5; x++)
         {
             for (int y = 0; y < 10; y++)
@@ -68,11 +73,11 @@ public class PuzzleGenerator
             }
         }
         // And try to apply changes randomly to enhance it
-        int tries = 150;
+        int tries = enhancementAmount;
 
         for (int i = 0; i < tries; i++)
         {
-            GridData foundGrid = EnhanceGrid(grid, 300, true, 0.9f + (i / tries) / 10f, maxHeights);
+            GeneratorGridData foundGrid = EnhanceGrid(grid, retriesForEachEnhancement, true, 0.9f + (i / enhancementAmount) / 10f, maxHeights);
             if (foundGrid != null)
             {
                 grid = foundGrid;
@@ -81,7 +86,7 @@ public class PuzzleGenerator
         // If the grid doesn't respect every hard conditions, retry
         if (!RespectsParameterConditions(grid))
         {
-            Debug.Log("trying again");
+            Debug.Log("trying again because the chain doesn't fit the parameter hard conditions");
             return Generate();
         }
 
@@ -93,12 +98,17 @@ public class PuzzleGenerator
 
         // Transforms the chain into a puzzle by placing a few pieces the hand of the user
         grid = PlaceIntoNext(grid, nextPieceAmount);
+        if(grid == null)
+        {
+            Debug.Log("trying again because there were not enough high bottles to put in next");
+            return Generate();
+        }
         return grid;
     }
 
-    private bool RespectsParameterConditions(GridData grid)
+    private bool RespectsParameterConditions(GeneratorGridData grid)
     {
-        GridData popper = grid.Clone();
+        GeneratorGridData popper = grid.Clone();
         popper.ResetScore();
         int multipleBottlePerChainMalus = 0;
         int bottleHeightMalus = 0;
@@ -143,9 +153,9 @@ public class PuzzleGenerator
     }
 
     // Gets the score of a chain based on the parameters
-    private int GetGenScore(GridData grid)
+    private int GetGenScore(GeneratorGridData grid)
     {
-        GridData popper = grid.Clone();
+        GeneratorGridData popper = grid.Clone();
         popper.ResetScore();
         int multipleBottlePerChainMalus = 0;
         int bottleHeightMalus = 0;
@@ -181,6 +191,7 @@ public class PuzzleGenerator
         float bottleHeightMultiplier = importanceOfHighBottles == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(bottleHeightMalus) / (5f / importanceOfHighBottles), 0);
         float ghostAmountMultiplier = importanceOfNotHavingGhosts == 0 ? 1 : System.Math.Max(1f - grid.GetAmountOf(GridElement.GHOST) / (40f / importanceOfNotHavingGhosts), 0);
         float elementAfterPoppedMultiplier = importanceOfClearing == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(50 - popper.GetAmountOf(GridElement.EMPTY)) / (10f / importanceOfClearing), 0);
+        
         return (int)(popper.GetScore() * ticksGoalMultiplier * multipleBottlePerChainMultiplier * bottleHeightMultiplier * ghostAmountMultiplier * elementAfterPoppedMultiplier);
 
 
@@ -188,9 +199,9 @@ public class PuzzleGenerator
     }
 
     // Places the highest danghosts in the "next" pieces (la réserve)
-    public GridData PlaceIntoNext(GridData grid, int amountToPlace = 4)
+    public GeneratorGridData PlaceIntoNext(GeneratorGridData grid, int amountToPlace = 4)
     {
-        GridData clone = grid.Clone();
+        GeneratorGridData clone = grid.Clone();
         // Elements to place in next for each column
         List<GridElement>[] elementByColumn = new List<GridElement>[5];
         for (int x = 0; x < 5; x++)
@@ -263,6 +274,7 @@ public class PuzzleGenerator
                 }
                 totalChances += chances[x];
             }
+            if (totalChances == 0) return null;
             float random = Random.Range(0, totalChances);
             for (int x = 0; x < 5; x++)
             {
@@ -343,18 +355,19 @@ public class PuzzleGenerator
         return clone;
     }
 
-    public GridData EnhanceGrid(GridData baseGrid, int tries, bool bottlesOnTop, float minScoreMultiplier, int[] maxChangeHeights)
+    public GeneratorGridData EnhanceGrid(GeneratorGridData baseGrid, int tries, bool bottlesOnTop, float minScoreMultiplier, int[] maxChangeHeights)
     {
         int bestScore = (int)(GetGenScore(baseGrid) * minScoreMultiplier);
 
-        GridData foundGrid = null;
+        GeneratorGridData foundGrid = null;
         while (tries >= 0)
         {
             tries--;
-            GridData clone = baseGrid.Clone();
+            GeneratorGridData clone = null;
             int changeAmount = Random.Range(1, 10);
             for (int i = 0; i < changeAmount; i++)
             {
+                clone = baseGrid.Clone();
                 GridElement randomElement;
                 int randomX;
                 int randomY;

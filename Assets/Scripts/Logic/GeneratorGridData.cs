@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static GridUtils;
+using static GeneratorGridUtils;
 
-public class GridData
+public class GeneratorGridData
 {
     private List<GridElement[]> grid;
     private GridElement[] nexts;
@@ -11,14 +11,17 @@ public class GridData
     private int currentScore;
     private int currentMultiplier;
     private int currentChain;
-
-    public GridData()
+    private int width;
+    private int height;
+    public GeneratorGridData()
     {
         grid = new List<GridElement[]>();
         nexts = new GridElement[12];
         currentScore = 0;
         currentMultiplier = 0;
         currentChain = 0;
+        width = 5;
+        height = 10;
     }
 
     public void ClearAbove(int y)
@@ -48,9 +51,9 @@ public class GridData
     public int GetAmountOf(GridElement element)
     {
         int amount = 0;
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (GetElementAt(x, y) == element) amount++;
             }
@@ -65,7 +68,7 @@ public class GridData
 
     public int GetPopScore()
     {
-        GridData clone = Clone();
+        GeneratorGridData clone = Clone();
         clone.DoAllPopSteps();
         return clone.GetScore();
     }
@@ -89,7 +92,7 @@ public class GridData
     public GridElement GetElementAt(int x, int y)
     {
         int actualY = y + floorHeight;
-        if (actualY < 0 || actualY >= grid.Count || x < 0 || x >= 5) return GridElement.EMPTY;
+        if (actualY < 0 || actualY >= grid.Count || x < 0 || x >= width) return GridElement.EMPTY;
         return grid[actualY][x];
     }
 
@@ -190,22 +193,25 @@ public class GridData
         return nexts.Where(e => true).ToArray();
     }
 
-    public GridData Clone()
+    public GeneratorGridData Clone()
     {
-        GridData clone = new GridData();
+        GeneratorGridData clone = new GeneratorGridData();
+        clone.width = width;
+        clone.height = height;
         clone.floorHeight = floorHeight;
         clone.grid = GridClone();
         clone.nexts = NextsClone();
         clone.currentMultiplier = currentMultiplier;
         clone.currentChain = currentChain;
         clone.currentScore = currentScore;
+        //Debug.Log(width);
         return clone;
     }
 
     public int GetColumnFillAmount(int column)
     {
         int total = 0;
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < height; i++)
         {
             if (GetElementAt(column, i) != GridElement.EMPTY) total++;
         }
@@ -228,7 +234,7 @@ public class GridData
 
     public bool ShouldFall()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < width; i++)
         {
             if (GetColumnHoles(i) > 0) return true;
         }
@@ -237,19 +243,19 @@ public class GridData
 
     public bool Fall(int column)
     {
-        int height = 0;
+        int columnHeight = 0;
         bool changed = false;
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < height; i++)
         {
             if (GetElementAt(column, i) != GridElement.EMPTY)
             {
-                if (height != i)
+                if (columnHeight != i)
                 {
-                    SetElementAt(column, height, GetElementAt(column, i));
+                    SetElementAt(column, columnHeight, GetElementAt(column, i));
                     SetElementAt(column, i, GridElement.EMPTY);
                     changed = true;
                 }
-                height++;
+                columnHeight++;
             }
         }
         return changed;
@@ -257,9 +263,9 @@ public class GridData
 
     public bool AreAllBottlesOnTop()
     {
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsBottle(GetElementAt(x, y)) && (!IsBottle(GetElementAt(x, y + 1)) && GetElementAt(x, y + 1) != GridElement.EMPTY))
                 {
@@ -272,9 +278,9 @@ public class GridData
 
     public bool AreAllFirstBottlesOnTop()
     {
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsBottle(GetElementAt(x, y)) && GetElementAt(x, y + 1) != GridElement.EMPTY)
                 {
@@ -296,9 +302,9 @@ public class GridData
     public int FirstBottlesAmount()
     {
         int amount = 0;
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsBottle(GetElementAt(x, y)))
                 {
@@ -322,7 +328,7 @@ public class GridData
     public bool Fall()
     {
         bool fell = false;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < width; i++)
             fell |= Fall(i);
         return fell;
     }
@@ -340,10 +346,10 @@ public class GridData
 
 
         // À partir de son identifiant, est-ce que le groupe doit disparaître après cette étape ou non. Initialisé à false.
-        bool[] shouldGroupDisappear = new bool[50];
-        for (int x = 0; x < 5; x++)
+        bool[] shouldGroupDisappear = new bool[width * height];
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 GridElement bottle = GetElementAt(x, y);
                 // Pour chaque bouteille de la grille
@@ -351,7 +357,7 @@ public class GridData
                 {
                     bool shouldBottleDisappear = false;
                     // Son identifiant est créé de la même manière que celui des danghosts
-                    int bottleID = x * 10 + y;
+                    int bottleID = x * height + y;
 
                     // Pour chaque élément autour de la bouteille
                     GetNeighbors(x, y, out int[] neighborXs, out int[] neighborYs);
@@ -366,7 +372,7 @@ public class GridData
                             int neighborID = groupIDs[neighborXs[i], neighborYs[i]];
                             if (neighborID < bottleID)
                             {
-                                if (bottleID < x * 10 + y)
+                                if (bottleID < x * height + y)
                                     ReplaceInGroupIDs(groupIDs, neighborID, bottleID);
                                 else
                                     bottleID = neighborID;
@@ -400,9 +406,9 @@ public class GridData
             }
         }
 
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 // Pour chaque ghost/echo restant
                 if (GetElementAt(x, y) == GridElement.GHOST)
@@ -429,10 +435,10 @@ public class GridData
 
 
         int totalAmount = 0;
-        int[] amountByGroup = new int[50];
-        for (int x = 0; x < 5; x++)
+        int[] amountByGroup = new int[width * height];
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 // Pour chaque danghost qui doit disparaître
                 if (groupIDs[x, y] != -1 && shouldGroupDisappear[groupIDs[x, y]])
@@ -454,7 +460,7 @@ public class GridData
                 if (currentMultiplier > 0)
                 {
                     // Si quelque chose a déjà cassé, c'est que c'est une chaîne, donc on augmente le multiplier, et la chaîne
-                    currentMultiplier += 5 + currentChain * 2;
+                    currentMultiplier += width + currentChain * 2;
                     currentChain++;
                 }
                 disappeared = true;
@@ -475,9 +481,9 @@ public class GridData
     public int[,] MakeGroupIDs()
     {
         int[,] groupIDs = MakeGroupIDsBase();
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (groupIDs[x, y] != -1)
                 {
@@ -499,14 +505,14 @@ public class GridData
     /// <returns>Un array à deux dimensions [x, y] avec l'identifiant de chaque danghost, selon l'ordre dans lequel il devrait casser.</returns>
     public int[,] MakeGroupIDsBase()
     {
-        int[,] groupIDs = new int[5, 10];
+        int[,] groupIDs = new int[width, height];
 
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsDanghost(GetElementAt(x, y)))
-                    groupIDs[x, y] = x * 10 + y;
+                    groupIDs[x, y] = x * height + y;
                 else
                     groupIDs[x, y] = -1;
             }
@@ -529,14 +535,14 @@ public class GridData
         {
             if (groupIDs[x2, y2] < groupIDs[x, y])
             {
-                if (groupIDs[x, y] == x * 10 + y)
+                if (groupIDs[x, y] == x * height + y)
                     groupIDs[x, y] = groupIDs[x2, y2];
                 else
                     ReplaceInGroupIDs(groupIDs, groupIDs[x, y], groupIDs[x2, y2]);
             }
             else
             {
-                if (groupIDs[x2, y2] == x2 * 10 + y2)
+                if (groupIDs[x2, y2] == x2 * height + y2)
                     groupIDs[x2, y2] = groupIDs[x, y];
                 else
                     ReplaceInGroupIDs(groupIDs, groupIDs[x2, y2], groupIDs[x, y]);
@@ -552,8 +558,8 @@ public class GridData
     /// <param name="to"></param>
     public void ReplaceInGroupIDs(int[,] groupIDs, int from, int to)
     {
-        for (int x = 0; x < 5; x++)
-            for (int y = 0; y < 10; y++)
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
                 if (groupIDs[x, y] == from) groupIDs[x, y] = to;
     }
 
