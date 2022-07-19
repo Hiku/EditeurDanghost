@@ -11,7 +11,11 @@ public class GameController : MonoBehaviour
     [SerializeField]
     PaintSelector paintSelector;
     [SerializeField]
-    InputFieldUpdater inputUpdater;
+    InputFieldUpdater gridInputUpdater;
+    [SerializeField]
+    InputFieldUpdater growInputUpdater;
+    [SerializeField]
+    InputFieldUpdater nextInputUpdater;
     [SerializeField]
     Image stepButtonImage;
     [SerializeField]
@@ -56,9 +60,11 @@ public class GameController : MonoBehaviour
         insert = false;
         currentHistory = 0;
         gridRenderer.Init();
+
         UpdateEditorElements();
         gridRenderer.SubscribeToGridClicked(OnGridClicked);
         gridRenderer.SubscribeToNextClicked(OnNextClicked);
+
     }
 
     public GridData GetCurrentGridData()
@@ -88,12 +94,16 @@ public class GameController : MonoBehaviour
         applyOffsetButtonImage.color = gridRenderer.yOffset != 0 ? opaque : transparent;
     }
 
-    
+
 
     public void UpdateEditorElements()
     {
+        gridInputUpdater.UpdateFromGridData(GetCurrentGridData());
+        growInputUpdater.UpdateFromGrowData(GetCurrentGridData());
+        nextInputUpdater.UpdateFromNextData(GetCurrentGridData());
+        //gridInputUpdater.FillWithPrefillGridText(GetCurrentGridData());
+
         gridRenderer.Render(GetCurrentGridData());
-        inputUpdater.UpdateFromGridData(GetCurrentGridData());
 
         UpdateButtonGrayed();
         UpdateScoreText();
@@ -226,7 +236,7 @@ public class GameController : MonoBehaviour
 
     public void ApplyOffset()
     {
-        if(gridRenderer.yOffset != 0)
+        if (gridRenderer.yOffset != 0)
         {
             AddCurrentToHistory();
             GetCurrentGridData().AddToFloorHeight(-gridRenderer.yOffset);
@@ -258,6 +268,38 @@ public class GameController : MonoBehaviour
     {
         insert = !insert;
         UpdateEditorElements();
+    }
+
+    public void UpdateGridFromInputFieldText()
+    {
+        AddCurrentToHistory();
+        gridInputUpdater.FillWithPrefillGridText(GetCurrentGridData());
+        UpdateEditorElements();
+    }
+    public void UpdateGrowFromInputFieldText()
+    {
+        AddCurrentToHistory();
+        growInputUpdater.FillWithGrowGridText(GetCurrentGridData());
+        UpdateEditorElements();
+    }
+    public void UpdateNextFromInputFieldText()
+    {
+        AddCurrentToHistory();
+        nextInputUpdater.FillWithNextText(GetCurrentGridData());
+        UpdateEditorElements();
+    }
+
+    public void TryToFindAllClearModifications()
+    {
+        // Creates a generator with its basic parameters, and gets a puzzle out of it
+        PuzzleGenerator generator = new PuzzleGenerator();
+        GridData newGrid = generator.Generate();
+        if (newGrid != null)
+        {
+            AddCurrentToHistory();
+            history[history.Count - 1] = newGrid;
+            UpdateEditorElements();
+        }
     }
 
     // Update is called once per frame

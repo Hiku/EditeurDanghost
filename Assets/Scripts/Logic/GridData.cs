@@ -21,6 +21,20 @@ public class GridData
         currentChain = 0;
     }
 
+    public void ClearAbove(int y)
+    {
+        int actualY = y + floorHeight;
+        if (actualY < grid.Count)
+            grid.RemoveRange(actualY, grid.Count - actualY);
+    }
+    public void ClearBelow(int y)
+    {
+        int actualY = y + floorHeight;
+        if (actualY > 0)
+            grid.RemoveRange(0, actualY);
+        floorHeight -= actualY;
+    }
+
     public GridElement GetNext(int index)
     {
         return nexts[index];
@@ -31,11 +45,30 @@ public class GridData
         floorHeight += offset;
     }
 
+    public int GetAmountOf(GridElement element)
+    {
+        int amount = 0;
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (GetElementAt(x, y) == element) amount++;
+            }
+        }
+        return amount;
+    }
+
     public void SetNext(int index, GridElement value)
     {
         nexts[index] = value;
     }
 
+    public int GetPopScore()
+    {
+        GridData clone = Clone();
+        clone.DoAllPopSteps();
+        return clone.GetScore();
+    }
     public void ResetScore()
     {
         currentChain = 0;
@@ -63,6 +96,10 @@ public class GridData
     public int GetHighestLine()
     {
         return grid.Count - floorHeight;
+    }
+    public int GetLowestLine()
+    {
+        return -floorHeight;
     }
 
     public void PullAllGridElements(int x, int y)
@@ -217,6 +254,70 @@ public class GridData
         }
         return changed;
     }
+
+    public bool AreAllBottlesOnTop()
+    {
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (IsBottle(GetElementAt(x, y)) && (!IsBottle(GetElementAt(x, y + 1)) && GetElementAt(x, y + 1) != GridElement.EMPTY))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public bool AreAllFirstBottlesOnTop()
+    {
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (IsBottle(GetElementAt(x, y)) && GetElementAt(x, y + 1) != GridElement.EMPTY)
+                {
+                    GridElement danghostEquivalent = DanghostEquivalent(GetElementAt(x, y));
+                    GetNeighbors(x, y, out int[] neighborXs, out int[] neighborsYs);
+                    for (int i = 0; i < neighborsYs.Length; i++)
+                    {
+                        if (GetElementAt(neighborXs[i], neighborsYs[i]) == danghostEquivalent)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public int FirstBottlesAmount()
+    {
+        int amount = 0;
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 10; y++)
+            {
+                if (IsBottle(GetElementAt(x, y)))
+                {
+                    GridElement danghostEquivalent = DanghostEquivalent(GetElementAt(x, y));
+                    GetNeighbors(x, y, out int[] neighborXs, out int[] neighborsYs);
+                    for (int i = 0; i < neighborsYs.Length; i++)
+                    {
+                        if (GetElementAt(neighborXs[i], neighborsYs[i]) == danghostEquivalent)
+                        {
+                            amount++;
+                        }
+                    }
+                }
+            }
+        }
+        return amount;
+
+    }
+
 
     public bool Fall()
     {
