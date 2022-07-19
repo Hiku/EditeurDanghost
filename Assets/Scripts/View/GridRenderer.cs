@@ -12,6 +12,9 @@ public class GridRenderer : MonoBehaviour
     [SerializeField]
     GameObject floorBar;
 
+    [SerializeField]
+    GameObject halfHex;
+
     public Vector3 floorBarInitPos;
 
     GridElementImage[,] gridElements;
@@ -32,8 +35,10 @@ public class GridRenderer : MonoBehaviour
         onNextClicked = new UnityEvent<int>();
         gridElements = new GridElementImage[width, height];
         RectTransform rectTransform = GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(90 * width, 90 * (height + 0.5f));
 
-        int danghostSpace = (int)(Screen.width / 1920f * 90f);
+        //int danghostSpace = (int)(Screen.width / 1920f * 90f);
+        int danghostSpace = 90;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -42,7 +47,7 @@ public class GridRenderer : MonoBehaviour
                 gridElements[x, y].Init();
                 gridElements[x, y].SetPosition(x, y);
                 gridElements[x, y].SubscribeToClick((x, y) => onGridClicked.Invoke(x, y));
-                gridElements[x, y].gameObject.transform.position = new Vector3(x + 0.5f, y + 0.5f + x % 2 * 0.5f, 0) * danghostSpace + transform.position;
+                gridElements[x, y].gameObject.transform.localPosition = new Vector3(x + 0.5f - width/2f, y + 0.5f + x % 2 * 0.5f - height - 0.5f, 0) * danghostSpace;
                 gridElements[x, y].name = $"{x}, {y}";
             }
         }
@@ -51,6 +56,12 @@ public class GridRenderer : MonoBehaviour
             nextElements[index].Init();
             nextElements[index].SubscribeToClick((index) => onNextClicked.Invoke(index));
             nextElements[index].SetIndex(index);
+        }
+        for(int x = 0; x < width; x++)
+        {
+            GameObject halfHexInstance = Instantiate(halfHex, transform);
+            halfHexInstance.transform.localPosition = new Vector3((x - (width-1)/2f) * danghostSpace, danghostSpace * ((height) * ((x+1) % 2) - height - 0.25f));
+            halfHexInstance.transform.eulerAngles = new Vector3(0, 0, (x+1)%2*180);
         }
         yOffset = 0;
         floorBarInitPos = floorBar.transform.position;
@@ -72,7 +83,7 @@ public class GridRenderer : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                gridElements[x, y].Render(data.GetElementAt(x, y - yOffset), y - yOffset < 0 || y - yOffset > 9);
+                gridElements[x, y].Render(data.GetElementAt(x, y - yOffset), y - yOffset < 0 || y - yOffset >= height);
             }
         }
 
@@ -80,7 +91,7 @@ public class GridRenderer : MonoBehaviour
         {
             nextElements[index].Render(data.GetNext(index));
         }
-        floorBar.transform.localPosition = new Vector3(0, yOffset * 90, 0);
+        floorBar.transform.localPosition = new Vector3(0, (yOffset + (10-height)) * 90, 0);
     }
 
     // Update is called once per frame

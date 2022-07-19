@@ -45,21 +45,24 @@ public class GameController : MonoBehaviour
     List<GeneratorGridData> history;
     int currentHistory;
     bool insert;
-
+    int height;
+    int width;
+    int nextAmount;
 
     // Start is called before the first frame update
     void Start()
     {
-        //currentPaint = GridData.GridElement.DANGHOST_BLUE;
-        //currentGridData.SetElementAt(4, 3, GridData.GridElement.BOTTLE_CYAN);
-        //Debug.Log(gridData.GetElementAt(4, 3));
+        height = GeneratorGridUtils.height;
+        width = GeneratorGridUtils.width;
+        nextAmount = 12;
         history = new List<GeneratorGridData>
         {
             new GeneratorGridData()
         };
+        
         insert = false;
         currentHistory = 0;
-        gridRenderer.Init();
+        gridRenderer.Init(width, height);
 
         UpdateEditorElements();
         gridRenderer.SubscribeToGridClicked(OnGridClicked);

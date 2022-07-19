@@ -4,6 +4,8 @@ using static GeneratorGridUtils;
 
 public class PuzzleGenerator
 {
+    public int width;
+    public int height;
     public int maxHeight;
     public int minHeight;
     public int colorAmount;
@@ -25,8 +27,9 @@ public class PuzzleGenerator
     public int enhancementAmount;
     public PuzzleGenerator()
     {
-        
-        maxHeight = 6;
+        width = GeneratorGridUtils.width;
+        height = GeneratorGridUtils.height;
+        maxHeight = 5;
         minHeight = 4;
         colorAmount = 6;
         ticksGoal = 6;
@@ -35,13 +38,13 @@ public class PuzzleGenerator
         importanceOfHighBottles = 1f;
         importanceOfNotHavingGhosts = 0f;
         importanceOfClearing = 1f;
-        isClearingNecessary = true;
+        isClearingNecessary = false;
         isNotHavingGhostsNecessary = false;
         isHavingAllBottlesOnTopNecessary = false;
         isHaving1BottlePerChainNecessary = false;
         isRespectingTicksGoalNecessary = false;
-        nextPieceAmount = 4;
-        shouldBePlayableWithoutHold = false;
+        nextPieceAmount = 2;
+        shouldBePlayableWithoutHold = true;
         shouldNextPiecesBeOnlyBottles = false;
         retriesForEachEnhancement = 50;
         enhancementAmount = 50;
@@ -51,16 +54,16 @@ public class PuzzleGenerator
     public GeneratorGridData Generate()
     {
         // First, decides of the heights for each column
-        int[] maxHeights = new int[5];
+        int[] maxHeights = new int[width];
         for (int i = 0; i < maxHeights.Length; i++)
         {
             maxHeights[i] = Random.Range(minHeight, maxHeight + 1);
         }
         // Then make a grid with random danghosts
         GeneratorGridData grid = new GeneratorGridData();
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (y < maxHeights[x])
                 {
@@ -112,10 +115,10 @@ public class PuzzleGenerator
         popper.ResetScore();
         int multipleBottlePerChainMalus = 0;
         int bottleHeightMalus = 0;
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
             int bottleAmount = 0;
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsBottle(grid.GetElementAt(x, y))) bottleAmount++;
                 else if (grid.GetElementAt(x, y) != GridElement.EMPTY) bottleHeightMalus += bottleAmount;
@@ -159,10 +162,10 @@ public class PuzzleGenerator
         popper.ResetScore();
         int multipleBottlePerChainMalus = 0;
         int bottleHeightMalus = 0;
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
             int bottleAmount = 0;
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsBottle(grid.GetElementAt(x, y))) bottleAmount++;
                 else if (grid.GetElementAt(x, y) != GridElement.EMPTY) bottleHeightMalus += bottleAmount;
@@ -203,14 +206,14 @@ public class PuzzleGenerator
     {
         GeneratorGridData clone = grid.Clone();
         // Elements to place in next for each column
-        List<GridElement>[] elementByColumn = new List<GridElement>[5];
-        for (int x = 0; x < 5; x++)
+        List<GridElement>[] elementByColumn = new List<GridElement>[width];
+        for (int x = 0; x < width; x++)
             elementByColumn[x] = new List<GridElement>();
         GridElement firstBottle;
         int firstBottleColumn = -1;
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 10; y++)
+            for (int y = 0; y < height; y++)
             {
                 if (IsBottle(clone.GetElementAt(x, y)) && clone.GetElementAt(x, y + 1) == GridElement.EMPTY)
                 {
@@ -239,14 +242,14 @@ public class PuzzleGenerator
 
         for (int i = 0; i < amountToPlace - 1; i++)
         {
-            float[] chances = new float[5];
+            float[] chances = new float[width];
             float totalChances = 0;
             float averageY = 0;
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
-                averageY += (clone.GetColumnHeight(x) - 1) / 5f;
+                averageY += (clone.GetColumnHeight(x) - 1) / (float)width;
             }
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
                 int y = clone.GetColumnHeight(x) - 1;
                 chances[x] = 2;
@@ -276,7 +279,7 @@ public class PuzzleGenerator
             }
             if (totalChances == 0) return null;
             float random = Random.Range(0, totalChances);
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
                 random -= chances[x];
                 if (random < 0)
@@ -288,7 +291,7 @@ public class PuzzleGenerator
                 }
             }
         }
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < clone.GetNextAmount(); i++)
         {
             clone.SetNext(i, GridElement.EMPTY);
         }
@@ -377,7 +380,7 @@ public class PuzzleGenerator
                     else if (Random.Range(0, 9) == 0) randomElement = GridElement.GHOST;
                     else if (Random.Range(0, 3) == 0) randomElement = (GridElement)Random.Range(7, 7 + colorAmount);
                     else randomElement = (GridElement)Random.Range(1, 1 + colorAmount);
-                    randomX = Random.Range(0, 5);
+                    randomX = Random.Range(0, width);
                     randomY = Random.Range(0, System.Math.Min(baseGrid.GetHighestLine() + 1, maxChangeHeights[randomX]));
                 } while (clone.GetElementAt(randomX, randomY) == randomElement);
                 clone.SetElementAt(randomX, randomY, randomElement);

@@ -30,16 +30,16 @@ public class InputFieldUpdater : MonoBehaviour
 
         for (int y = data.GetHighestLine() - 1; y >= 0; y--)
         {
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
                 if (data.GetElementAt(x, y) != GridElement.EMPTY) empty = false;
             }
             if (empty) continue;
 
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
                 gridTextBuilder.Append(GetTranslation(data.GetElementAt(x, y)));
-                if (x != 4) gridTextBuilder.Append(",");
+                if (x != width-1) gridTextBuilder.Append(",");
             }
             if(y!=0)gridTextBuilder.Append("\n");
         }
@@ -50,15 +50,17 @@ public class InputFieldUpdater : MonoBehaviour
         StringBuilder gridTextBuilder = new StringBuilder();
         for (int y = -1; y >= data.GetLowestLine(); y--)
         {
-            for (int x = 0; x < 5; x++)
+            for (int x = 0; x < width; x++)
             {
                 gridTextBuilder.Append(GetTranslation(data.GetElementAt(x, y)));
-                if (x != 4) gridTextBuilder.Append(",");
+                if (x != width-1) gridTextBuilder.Append(",");
             }
             if (y != data.GetLowestLine()) gridTextBuilder.Append("\n");
         }
         string gridText = gridTextBuilder.ToString();
-        while(gridText.EndsWith("\n,,,,"))gridText = gridText.Substring(0,gridText.Length-5);
+        string toRemove = "\n";
+        for(int i = 0; i< width-1; i++) toRemove += ",";
+        while(gridText.EndsWith(toRemove))gridText = gridText.Substring(0,gridText.Length- width);
         return gridText;
     }
     public static string GetNextText(GeneratorGridData data)

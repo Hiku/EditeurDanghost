@@ -11,8 +11,6 @@ public class GeneratorGridData
     private int currentScore;
     private int currentMultiplier;
     private int currentChain;
-    private int width;
-    private int height;
     public GeneratorGridData()
     {
         grid = new List<GridElement[]>();
@@ -20,8 +18,6 @@ public class GeneratorGridData
         currentScore = 0;
         currentMultiplier = 0;
         currentChain = 0;
-        width = 5;
-        height = 10;
     }
 
     public void ClearAbove(int y)
@@ -30,6 +26,11 @@ public class GeneratorGridData
         if (actualY < grid.Count)
             grid.RemoveRange(actualY, grid.Count - actualY);
     }
+    public int GetNextAmount()
+    {
+        return nexts.Count();
+    }
+
     public void ClearBelow(int y)
     {
         int actualY = y + floorHeight;
@@ -196,8 +197,6 @@ public class GeneratorGridData
     public GeneratorGridData Clone()
     {
         GeneratorGridData clone = new GeneratorGridData();
-        clone.width = width;
-        clone.height = height;
         clone.floorHeight = floorHeight;
         clone.grid = GridClone();
         clone.nexts = NextsClone();
@@ -506,7 +505,6 @@ public class GeneratorGridData
     public int[,] MakeGroupIDsBase()
     {
         int[,] groupIDs = new int[width, height];
-
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)

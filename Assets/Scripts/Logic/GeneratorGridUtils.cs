@@ -21,9 +21,13 @@ public class GeneratorGridUtils
         BOTTLE_GREEN,
         GHOST
     }
+
+    public static int width = 5;
+    public static int height = 10;
+
     public static GridElement[] MakeLine()
     {
-        return new GridElement[5];
+        return new GridElement[width];
     }
     public static void GetNeighbors(int x, int y, out int[] neighborXs, out int[] neighborYs)
     {
@@ -65,7 +69,7 @@ public class GeneratorGridUtils
 
     public static bool IsInBounds(int x, int y)
     {
-        return x >= 0 && x < 5 && y >= 0 && y < 10;
+        return x >= 0 && x < width && y >= 0 && y < height;
     }
 
     public static bool GetBelow(int x, int y, out int x2, out int y2)
