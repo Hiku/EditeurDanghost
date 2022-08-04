@@ -4,30 +4,18 @@ using UnityEngine;
 
 public class GeneratorGridUtils
 {
-    public enum GridElement
-    {
-        EMPTY,
-        DANGHOST_BLUE,
-        DANGHOST_RED,
-        DANGHOST_CYAN,
-        DANGHOST_YELLOW,
-        DANGHOST_PURPLE,
-        DANGHOST_GREEN,
-        BOTTLE_BLUE,
-        BOTTLE_RED,
-        BOTTLE_CYAN,
-        BOTTLE_YELLOW,
-        BOTTLE_PURPLE,
-        BOTTLE_GREEN,
-        GHOST
-    }
 
     public static int width = 5;
     public static int height = 10;
 
-    public static GridElement[] MakeLine()
+    public static GeneratorGridElement[] MakeLine()
     {
-        return new GridElement[width];
+        GeneratorGridElement[] elements = new GeneratorGridElement[width];
+        for (int i = 0; i < elements.Length; i++)
+        {
+            elements[i] = GeneratorGridElement.EMPTY;
+        }
+        return elements;
     }
     public static void GetNeighbors(int x, int y, out int[] neighborXs, out int[] neighborYs)
     {
@@ -108,8 +96,28 @@ public class GeneratorGridUtils
         y2 = y - (x + 1) % 2;
         return IsInBounds(x2, y2);
     }
+    public static int FirstYAboveTatanaCut(int x)
+    {
+        switch (x)
+        {
+            case 0:
+            case 4:
+                return 6;
+            case 1:
+            case 2:
+            case 3:
+                return 5;
+        }
+        Debug.LogWarning("x isn't between 0 and 4 for Tatana cut");
+        return 0;
+    }
 
-    public static bool IsBottle(GridElement element) => element switch
+    public static bool IsAboveTatanaCut(int x, int y)
+    {
+        return FirstYAboveTatanaCut(x) <= y;
+    }
+
+    /*public static bool IsBottle(GridElement element) => element switch
     {
         GridElement.BOTTLE_BLUE => true,
         GridElement.BOTTLE_YELLOW => true,
@@ -152,6 +160,6 @@ public class GeneratorGridUtils
         GridElement.BOTTLE_GREEN => GridElement.DANGHOST_GREEN,
         _ => element
     };
-
+    */
 
 }

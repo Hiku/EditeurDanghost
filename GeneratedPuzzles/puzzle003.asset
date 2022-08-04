@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d44957c2548fd249aede090d05c2da3, type: 3}
+  m_Name: Gravitak1
+  m_EditorClassIdentifier: 
+  scriptableID: -1
+  backgroundSprite: {fileID: 21300000, guid: b710cf81163780e41a61bbc91d7fa27d, type: 3}
+  backgroundAccesss: []
+  overrideSkin: 0
+  fightSummary: Default_Summary
+  gameDuration: -1
+  sizeY: 10
+  additionalGrowLine: 0
+  startSpeedMultiplier: 1
+  playableByPlayer:
+  - {fileID: 11400000, guid: 28951852c7ca80841a43c43749d01d54, type: 2}
+  playerDifficulty: 1
+  playerTeam: 0
+  ennemyCharacters: []
+  nbColor: 6
+  allowPoops: 0
+  gridIsGoingUp: 0
+  gridAccelInIntro: 0
+  startDialogue: {fileID: 0}
+  EnablePowers: 0
+  winnerIsLastSurvivor: 1
+  powerAtStart: {fileID: 0}
+  inputTutoToShowDefault: 
+  bossFight: {fileID: 0}
+  gameConditions:
+  - winDialogue: {fileID: 0}
+    doIfWin: 2
+    cleanBoardBeforeAddNext: 0
+    looseDialogue: {fileID: 0}
+    doIfLoose: 0
+    gameSecondaryChallenges: []
+    inputTutoToShow: 
+    victoryConditions:
+    - condition: 15
+      value: 0
+      mustBeDone: 1
+    defeatConditions: []
+    conditionSprite: {fileID: 0}
+  prefillGridWith: ',E4,,E3,Y0
+
+    Y2,Y2,,P,Y0
+
+    Y4,Y5,,Y3,Y0
+
+    Y0,Y0,Y0,Y0,Y0'
+  prefillGrowWith: 
+  endGrowIfNoPrefill: 0
+  prefillReserveWith: 'Y5
+
+    Y2
+
+    Y0
+
+    '
+  endPieceIfNoPrefill: 1
+  withIntro: 1

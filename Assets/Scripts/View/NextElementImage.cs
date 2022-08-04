@@ -37,9 +37,11 @@ public class NextElementImage : MonoBehaviour, IPointerDownHandler
     {
         CallClickedEvent();
     }
-    public void Render(GridElement element)
+    public void Render(GeneratorGridElement element)
     {
-        SetSprite((int)element);
+        if (element == null) SetSprite(0);
+        else 
+        SetSprite(element.GetSpriteID());
     }
 
     public void SetSprite(int sprite)

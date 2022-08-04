@@ -7,14 +7,23 @@ public class PaintSelector : MonoBehaviour
 
     [SerializeField]
     Button[] buttons;
-    [SerializeField]
-    GridElement[] buttonElements;
+    GeneratorGridElement[] buttonElements;
 
-    GridElement currentPaint;
+    GeneratorGridElement currentPaint;
 
     // Start is called before the first frame update
     void Start()
     {
+        buttonElements = new GeneratorGridElement[buttons.Length];
+        for (int i = 0; i < 6; i++)
+        {
+            buttonElements[i] = GeneratorGridElement.Danghost((GridElementColor)i);
+        }
+        for (int i = 6; i < 12; i++)
+        {
+            buttonElements[i] = GeneratorGridElement.Bottle((GridElementColor)(i-6));
+        }
+        buttonElements[12] = GeneratorGridElement.GHOST;
         for (int i = 0; i < buttons.Length; i++)
         {
             int b = i;
@@ -26,7 +35,7 @@ public class PaintSelector : MonoBehaviour
         SelectPaint(buttonElements[0]);
     }
 
-    public void SelectPaint(GridElement element)
+    public void SelectPaint(GeneratorGridElement element)
     {
         for (int i = 0; i < buttons.Length; i++)
         {
@@ -42,7 +51,7 @@ public class PaintSelector : MonoBehaviour
         currentPaint = element;
     }
 
-    public GridElement GetCurrentPaint()
+    public GeneratorGridElement GetCurrentPaint()
     {
         return currentPaint;
     }
@@ -50,15 +59,15 @@ public class PaintSelector : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SelectPaint(GridElement.DANGHOST_BLUE);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SelectPaint(GridElement.DANGHOST_RED);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SelectPaint(GridElement.DANGHOST_CYAN);
-        if (Input.GetKeyDown(KeyCode.Alpha4)) SelectPaint(GridElement.DANGHOST_YELLOW);
-        if (Input.GetKeyDown(KeyCode.Alpha5)) SelectPaint(GridElement.DANGHOST_PURPLE);
-        if (Input.GetKeyDown(KeyCode.Alpha6)) SelectPaint(GridElement.DANGHOST_GREEN);
+        if (Input.GetKeyDown(KeyCode.Alpha1)) SelectPaint(GeneratorGridElement.Danghost(GridElementColor.BLUE));
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SelectPaint(GeneratorGridElement.Danghost(GridElementColor.RED));
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SelectPaint(GeneratorGridElement.Danghost(GridElementColor.CYAN));
+        if (Input.GetKeyDown(KeyCode.Alpha4)) SelectPaint(GeneratorGridElement.Danghost(GridElementColor.YELLOW));
+        if (Input.GetKeyDown(KeyCode.Alpha5)) SelectPaint(GeneratorGridElement.Danghost(GridElementColor.PURPLE));
+        if (Input.GetKeyDown(KeyCode.Alpha6)) SelectPaint(GeneratorGridElement.Danghost(GridElementColor.GREEN));
         if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift))
-            SelectPaint(BottleEquivalent(GetCurrentPaint()));
+            SelectPaint(GetCurrentPaint().GetBottleEquivalent());
         if (Input.GetKeyUp(KeyCode.LeftShift) || Input.GetKeyUp(KeyCode.RightShift))
-            SelectPaint(DanghostEquivalent(GetCurrentPaint()));
+            SelectPaint(GetCurrentPaint().GetDanghostEquivalent());
     }
 }

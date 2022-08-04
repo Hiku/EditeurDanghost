@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static GeneratorGridUtils;
 
 public class GridElementImage : MonoBehaviour, IPointerDownHandler, IPointerEnterHandler, IPointerExitHandler
 {
@@ -50,18 +49,25 @@ public class GridElementImage : MonoBehaviour, IPointerDownHandler, IPointerEnte
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        
+
     }
 
-    public void Render(GridElement element, bool transparent = false)
+    public void Render(GeneratorGridElement element, bool transparent = false)
     {
-        SetSprite((int)element, transparent);
+        if (element == null)
+        {
+            SetSprite(0, transparent);
+        }
+        else
+        {
+            SetSprite(element.GetSpriteID(), transparent);
+        }
     }
 
 
     public void SetSprite(int sprite, bool transparent = false)
     {
-        GetComponent<Image>().color = new Color(1, 1, 1, elementSprites[sprite] == null ? 0 : transparent?0.5f: 1);
+        GetComponent<Image>().color = new Color(1, 1, 1, elementSprites[sprite] == null ? 0 : transparent ? 0.5f : 1);
         GetComponent<Image>().sprite = elementSprites[sprite];
     }
 

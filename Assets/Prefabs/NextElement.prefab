@@ -179,4 +179,6 @@ MonoBehaviour:
   - {fileID: -3417626953198778296, guid: 061f8318172d97b47a80112bcb841789, type: 3}
   - {fileID: 3662690913637824071, guid: 061f8318172d97b47a80112bcb841789, type: 3}
   - {fileID: 21300000, guid: bec31692e9dd0014cab591915338ae67, type: 3}
+  - {fileID: 21300000, guid: d8216e9c3cece344c8b429b6c08afcdb, type: 3}
+  - {fileID: 21300000, guid: ada762844eb8cd341b502db025f38371, type: 3}
   elementImage: {fileID: 2623842998967380763}

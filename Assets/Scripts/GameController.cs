@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static GeneratorGridUtils;
 
 public class GameController : MonoBehaviour
 {
@@ -59,7 +58,7 @@ public class GameController : MonoBehaviour
         {
             new GeneratorGridData()
         };
-        
+
         insert = false;
         currentHistory = 0;
         gridRenderer.Init(width, height);
@@ -104,7 +103,6 @@ public class GameController : MonoBehaviour
         gridInputUpdater.UpdateFromGridData(GetCurrentGridData());
         growInputUpdater.UpdateFromGrowData(GetCurrentGridData());
         nextInputUpdater.UpdateFromNextData(GetCurrentGridData());
-        //gridInputUpdater.FillWithPrefillGridText(GetCurrentGridData());
 
         gridRenderer.Render(GetCurrentGridData());
 
@@ -125,18 +123,27 @@ public class GameController : MonoBehaviour
             if (insert || GetCurrentGridData().GetNext(index) != paintSelector.GetCurrentPaint())
             {
                 AddCurrentToHistory();
-                if (insert) GetCurrentGridData().PushAllNextElements(index);
+                if (insert)
+                {
+                    GetCurrentGridData().PushAllNextElements(index);
+                }
+
                 GetCurrentGridData().SetNext(index, paintSelector.GetCurrentPaint());
             }
         }
         else if (Input.GetMouseButton(1))
         {
-            if (insert || GetCurrentGridData().GetNext(index) != GridElement.EMPTY)
+            if (insert || GetCurrentGridData().GetNext(index) != GeneratorGridElement.EMPTY)
             {
                 AddCurrentToHistory();
-                if (insert) GetCurrentGridData().PullAllNextElements(index);
+                if (insert)
+                {
+                    GetCurrentGridData().PullAllNextElements(index);
+                }
                 else
-                    GetCurrentGridData().SetNext(index, GridElement.EMPTY);
+                {
+                    GetCurrentGridData().SetNext(index, GeneratorGridElement.EMPTY);
+                }
             }
         }
         else if (Input.GetMouseButton(2) || ctrl)
@@ -148,7 +155,11 @@ public class GameController : MonoBehaviour
 
     public void AllClear()
     {
-        if (GetCurrentGridData().IsEmpty()) return;
+        if (GetCurrentGridData().IsEmpty())
+        {
+            return;
+        }
+
         AddCurrentToHistory();
         history[history.Count - 1] = new GeneratorGridData();
         UpdateEditorElements();
@@ -163,17 +174,27 @@ public class GameController : MonoBehaviour
             if (insert || GetCurrentGridData().GetElementAt(x, y) != paintSelector.GetCurrentPaint())
             {
                 AddCurrentToHistory();
-                if (insert) GetCurrentGridData().PushAllGridElements(x, y);
+                if (insert)
+                {
+                    GetCurrentGridData().PushAllGridElements(x, y);
+                }
+
                 GetCurrentGridData().SetElementAt(x, y, paintSelector.GetCurrentPaint());
             }
         }
         else if (Input.GetMouseButton(1))
         {
-            if (insert || GetCurrentGridData().GetElementAt(x, y) != GridElement.EMPTY)
+            if (insert || GetCurrentGridData().GetElementAt(x, y) != GeneratorGridElement.EMPTY)
             {
                 AddCurrentToHistory();
-                if (insert) GetCurrentGridData().PullAllGridElements(x, y);
-                else GetCurrentGridData().SetElementAt(x, y, GridElement.EMPTY);
+                if (insert)
+                {
+                    GetCurrentGridData().PullAllGridElements(x, y);
+                }
+                else
+                {
+                    GetCurrentGridData().SetElementAt(x, y, GeneratorGridElement.EMPTY);
+                }
             }
         }
         else if (Input.GetMouseButton(2) || ctrl)
@@ -190,7 +211,10 @@ public class GameController : MonoBehaviour
     public void AddToHistory(GeneratorGridData gridData)
     {
         if (currentHistory != history.Count - 1)
+        {
             history.RemoveRange(currentHistory + 1, history.Count - currentHistory - 1);
+        }
+
         history.Add(gridData);
         currentHistory = history.Count - 1;
     }
@@ -291,18 +315,29 @@ public class GameController : MonoBehaviour
         nextInputUpdater.FillWithNextText(GetCurrentGridData());
         UpdateEditorElements();
     }
-
+    float difficulty = 3.0f;
     public void TryToFindAllClearModifications()
     {
         // Creates a generator with its basic parameters, and gets a puzzle out of it
         PuzzleGenerator generator = new PuzzleGenerator();
+        PuzzleDifficultySetter pds = new PuzzleDifficultySetter(PuzzleGenerator.Power.NONE, difficulty);
+
+        //Debug.Log(difficulty);
+        //difficulty += 0.5f;
+        pds.ApplyTo(generator);
         GeneratorGridData newGrid = generator.Generate();
+
         if (newGrid != null)
         {
             AddCurrentToHistory();
             history[history.Count - 1] = newGrid;
             UpdateEditorElements();
         }
+    }
+
+    public void FullScreen()
+    {
+        Screen.fullScreen = !Screen.fullScreen;
     }
 
     // Update is called once per frame
@@ -317,4 +352,70 @@ public class GameController : MonoBehaviour
             Redo();
         }
     }
+    public void TestButton()
+    {
+        AddCurrentToHistory();
+        // Pouvoir Tatana
+        /*
+        if (GetCurrentGridData().GetAmountOf(GridElement.TATANA_CUT) > 0)
+            GetCurrentGridData().Replace(GridElement.TATANA_CUT, GridElement.EMPTY);
+        else
+            GetCurrentGridData().TatanaCut();
+        */
+
+        // Pouvoir Gravitak
+
+        //GetCurrentGridData().SetGravityReversed(!GetCurrentGridData().IsGravityReversed());
+        //GetCurrentGridData().Fall();
+
+        // Pouvoir Kukupin
+        //GetCurrentGridData().PlaceKukupinWall(Random.Range(0, 5));
+
+
+        // Generer des arcs de mode histoire
+        /*StoryGenerator.Generate(PuzzleGenerator.Power.NONE);
+        StoryGenerator.Generate(PuzzleGenerator.Power.KUKUPIN_WALL);
+        StoryGenerator.Generate(PuzzleGenerator.Power.GRAVITAK_GRAVITY);
+        StoryGenerator.Generate(PuzzleGenerator.Power.TATANA_CUT);
+        */
+
+        // Pouvoir Tutut
+
+        //GetCurrentGridData().SetElementAt(0, 0, new GeneratorGridElement(ElementType.DANGHOST, GridElementColor.BLUE, GridElementColor.RED, 0));
+
+        // Pouvoir Barbak
+        //GetCurrentGridData().SetMinGroupSizeToPop(4);
+        PuzzleGenerator.Solve(GetCurrentGridData(), false, PuzzleGenerator.Power.GRAVITAK_GRAVITY, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
+        //Debug.Log(feasibleWithLessPieces + " ; " + feasibleWithoutPower);
+        if (bestSolution != null)
+        {
+            history[history.Count - 1] = bestSolution;
+        }
+
+        //Debug.Log("non " + PuzzleGenerator.nonTimes);
+        //Debug.Log("oui " + PuzzleGenerator.ouiTimes);
+
+        /*List<int> trucs = new List<int>();
+        for(int i = 0; i<50000; i++)
+        {
+            trucs.Add(Random.Range(int.MinValue, int.MaxValue));
+        }
+        System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+        stopWatch.Start();
+        int amount = 0;
+        for(int i = 0; i<50000; i++)
+        {
+            if (trucs.Contains(i)) amount++;
+        }
+
+        stopWatch.Stop();
+        Debug.Log(stopWatch.ElapsedMilliseconds);
+        Debug.Log(amount);*/
+
+
+        //Debug.Log(PuzzleGenerator.IsBeatableWithoutUsingAllPiecesOrPower(GetCurrentGridData(), false, PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE));
+        UpdateEditorElements();
+
+    }
+
 }

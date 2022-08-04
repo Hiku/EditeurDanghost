@@ -32,16 +32,28 @@ public class InputFieldUpdater : MonoBehaviour
         {
             for (int x = 0; x < width; x++)
             {
-                if (data.GetElementAt(x, y) != GridElement.EMPTY) empty = false;
+                if (data.GetElementAt(x, y) != GeneratorGridElement.EMPTY)
+                {
+                    empty = false;
+                }
             }
-            if (empty) continue;
+            if (empty)
+            {
+                continue;
+            }
 
             for (int x = 0; x < width; x++)
             {
                 gridTextBuilder.Append(GetTranslation(data.GetElementAt(x, y)));
-                if (x != width-1) gridTextBuilder.Append(",");
+                if (x != width - 1)
+                {
+                    gridTextBuilder.Append(",");
+                }
             }
-            if(y!=0)gridTextBuilder.Append("\n");
+            if (y != 0)
+            {
+                gridTextBuilder.Append("\n");
+            }
         }
         return gridTextBuilder.ToString().Replace("\n\n", "\n");
     }
@@ -53,14 +65,28 @@ public class InputFieldUpdater : MonoBehaviour
             for (int x = 0; x < width; x++)
             {
                 gridTextBuilder.Append(GetTranslation(data.GetElementAt(x, y)));
-                if (x != width-1) gridTextBuilder.Append(",");
+                if (x != width - 1)
+                {
+                    gridTextBuilder.Append(",");
+                }
             }
-            if (y != data.GetLowestLine()) gridTextBuilder.Append("\n");
+            if (y != data.GetLowestLine())
+            {
+                gridTextBuilder.Append("\n");
+            }
         }
         string gridText = gridTextBuilder.ToString();
         string toRemove = "\n";
-        for(int i = 0; i< width-1; i++) toRemove += ",";
-        while(gridText.EndsWith(toRemove))gridText = gridText.Substring(0,gridText.Length- width);
+        for (int i = 0; i < width - 1; i++)
+        {
+            toRemove += ",";
+        }
+
+        while (gridText.EndsWith(toRemove))
+        {
+            gridText = gridText.Substring(0, gridText.Length - width);
+        }
+
         return gridText;
     }
     public static string GetNextText(GeneratorGridData data)
@@ -69,7 +95,10 @@ public class InputFieldUpdater : MonoBehaviour
         int nextAmount = 0;
         for (int index = 0; index < 12; index++)
         {
-            if (data.GetNext(index) != GridElement.EMPTY) nextAmount = index + 1;
+            if (data.GetNext(index) != GeneratorGridElement.EMPTY)
+            {
+                nextAmount = index + 1;
+            }
         }
 
         for (int index = 0; index < nextAmount; index++)
@@ -121,17 +150,30 @@ public class InputFieldUpdater : MonoBehaviour
         string[] elements = text.Split(new char[] { '\n' }, 12);
         for (int index = 0; index < 12; index++)
         {
-            if(index >= elements.Length) 
-                data.SetNext(index, GridElement.EMPTY);
+            if (index >= elements.Length)
+            {
+                data.SetNext(index, GeneratorGridElement.EMPTY);
+            }
             else
+            {
                 data.SetNext(index, GetTranslation(elements[index]));
+            }
         }
     }
 
 
 
 
-    public static string GetTranslation(GridElement element) => element switch
+    public static string GetTranslation(GeneratorGridElement element)
+    {
+        if (element == null)
+        {
+            return "";
+        }
+
+        return element.ToString();
+    }
+    /*=> element switch
     {
         GridElement.EMPTY => "",
         GridElement.DANGHOST_BLUE => "Y3",
@@ -147,26 +189,32 @@ public class InputFieldUpdater : MonoBehaviour
         GridElement.BOTTLE_PURPLE => "E0",
         GridElement.BOTTLE_GREEN => "E1",
         GridElement.GHOST => "P",
+        GridElement.KUKUPIN_WALL => "W",
         _ => ""
-    };
-    public GridElement GetTranslation(string element) => element switch
+    };*/
+    public GeneratorGridElement GetTranslation(string element)
     {
-        "" => GridElement.EMPTY,
-        "Y3" => GridElement.DANGHOST_BLUE,
-        "Y4" => GridElement.DANGHOST_RED,
-        "Y2" => GridElement.DANGHOST_CYAN,
-        "Y5" => GridElement.DANGHOST_YELLOW,
-        "Y0" => GridElement.DANGHOST_PURPLE,
-        "Y1" => GridElement.DANGHOST_GREEN,
-        "E3" => GridElement.BOTTLE_BLUE,
-        "E4" => GridElement.BOTTLE_RED,
-        "E2" => GridElement.BOTTLE_CYAN,
-        "E5" => GridElement.BOTTLE_YELLOW,
-        "E0" => GridElement.BOTTLE_PURPLE,
-        "E1" => GridElement.BOTTLE_GREEN,
-        "P" => GridElement.GHOST,
-        _ => GridElement.EMPTY
-    };
+        return GeneratorGridElement.FromString(element);
+    }
+    //} => element switch
+    //{
+    //    "" => GridElement.EMPTY,
+    //    "Y3" => GridElement.DANGHOST_BLUE,
+    //    "Y4" => GridElement.DANGHOST_RED,
+    //    "Y2" => GridElement.DANGHOST_CYAN,
+    //    "Y5" => GridElement.DANGHOST_YELLOW,
+    //    "Y0" => GridElement.DANGHOST_PURPLE,
+    //    "Y1" => GridElement.DANGHOST_GREEN,
+    //    "E3" => GridElement.BOTTLE_BLUE,
+    //    "E4" => GridElement.BOTTLE_RED,
+    //    "E2" => GridElement.BOTTLE_CYAN,
+    //    "E5" => GridElement.BOTTLE_YELLOW,
+    //    "E0" => GridElement.BOTTLE_PURPLE,
+    //    "E1" => GridElement.BOTTLE_GREEN,
+    //    "P" => GridElement.GHOST,
+    //    "W" => GridElement.KUKUPIN_WALL,
+    //    _ => GridElement.EMPTY
+    //};
 
     // Start is called before the first frame update
     void Start()
