@@ -127,7 +127,7 @@ public class GameController : MonoBehaviour
                 {
                     GetCurrentGridData().PushAllNextElements(index);
                 }
-
+                GetCurrentGridData().ResetScore();
                 GetCurrentGridData().SetNext(index, paintSelector.GetCurrentPaint());
             }
         }
@@ -144,6 +144,7 @@ public class GameController : MonoBehaviour
                 {
                     GetCurrentGridData().SetNext(index, GeneratorGridElement.EMPTY);
                 }
+                GetCurrentGridData().ResetScore();
             }
         }
         else if (Input.GetMouseButton(2) || ctrl)
@@ -180,6 +181,7 @@ public class GameController : MonoBehaviour
                 }
 
                 GetCurrentGridData().SetElementAt(x, y, paintSelector.GetCurrentPaint());
+                GetCurrentGridData().ResetScore();
             }
         }
         else if (Input.GetMouseButton(1))
@@ -195,6 +197,7 @@ public class GameController : MonoBehaviour
                 {
                     GetCurrentGridData().SetElementAt(x, y, GeneratorGridElement.EMPTY);
                 }
+                GetCurrentGridData().ResetScore();
             }
         }
         else if (Input.GetMouseButton(2) || ctrl)
@@ -315,17 +318,22 @@ public class GameController : MonoBehaviour
         nextInputUpdater.FillWithNextText(GetCurrentGridData());
         UpdateEditorElements();
     }
-    float difficulty = 3.0f;
+    float difficulty = 5.0f;
     public void TryToFindAllClearModifications()
     {
         // Creates a generator with its basic parameters, and gets a puzzle out of it
         PuzzleGenerator generator = new PuzzleGenerator();
-        PuzzleDifficultySetter pds = new PuzzleDifficultySetter(PuzzleGenerator.Power.NONE, difficulty);
+        PuzzleDifficultySetter pds = new PuzzleDifficultySetter(PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE, difficulty);
+        //System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+        //stopWatch.Start();
+
 
         //Debug.Log(difficulty);
         //difficulty += 0.5f;
         pds.ApplyTo(generator);
         GeneratorGridData newGrid = generator.Generate();
+        //stopWatch.Stop();
+        //Debug.Log(stopWatch.ElapsedMilliseconds);
 
         if (newGrid != null)
         {
@@ -385,7 +393,7 @@ public class GameController : MonoBehaviour
 
         // Pouvoir Barbak
         //GetCurrentGridData().SetMinGroupSizeToPop(4);
-        PuzzleGenerator.Solve(GetCurrentGridData(), false, PuzzleGenerator.Power.GRAVITAK_GRAVITY, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
+        PuzzleGenerator.Solve(GetCurrentGridData(), false, PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount, true, true);
         //Debug.Log(feasibleWithLessPieces + " ; " + feasibleWithoutPower);
         if (bestSolution != null)
         {

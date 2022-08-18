@@ -104,7 +104,7 @@ public class PuzzleDifficultySetter
     {
         ApplyWithPowerNone(generator);
         generator.nextPieceAmount = (int)System.Math.Min(2 + difficulty * 0.6f, 4);
-        generator.minimumTicks--;
+        generator.minimumTicks-=2;
         generator.isHaving1BottlePerChainNecessary = false;
         generator.power = PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE;
     }

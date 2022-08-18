@@ -17,38 +17,63 @@ public class PuzzleGenerator
         BARBAK_GROUP3
     }
 
+    // The maximum height (inclusive) of the puzzle grid columns
     public float maxHeight;
+    // The minimum height (inclusive) of the puzzle grid columns
     public float minHeight;
+    // The amount of colors in the puzzle
     public int colorAmount;
+    // The tick amount that the generator tries to satisfy
     public int ticksGoal;
+
+    // Importances are 0: don't try, 1: default importance, and they can be anything above 0
     public float importanceOfTicksGoal;
+    // 1 bottle per chain is about not having too many bottles popping at the same time, which might be confusing and look inefficient
     public float importanceOf1BottlePerChain;
+    // Having high bottles makes it feel kind of as if you were playing the real game; you mostly put bottles on top of generated danghosts
     public float importanceOfHighBottles;
+    // Ghosts can be confusing for beginers, so it might be better to only have only few of them in easy puzzles
     public float importanceOfNotHavingGhosts;
+    // Puzzles should be clearable for now
     public float importanceOfClearing;
+
+    // If the conditions set to true are not satisfied, the puzzle will be generated again
     public bool isClearingNecessary;
     public bool isNotHavingGhostsNecessary;
     public bool isHavingAllBottlesOnTopNecessary;
     public bool isHaving1BottlePerChainNecessary;
     public bool isRespectingTicksGoalNecessary;
+    // If the tick amount is lower than the minimum, the puzzle will be generated again
     public int minimumTicks;
+    // The amount of pieces the player should use for the puzzle
     public int nextPieceAmount;
+    // If the puzzle should be playable without hold, the generator will place pieces in next straightforwardly, which is easier for the player
     public bool shouldBePlayableWithoutHold;
+    // It might be easier for the player to only have to place pieces as bottles, for the first puzzles
     public bool shouldNextPiecesBeOnlyBottles;
+    // How many ways of enhancing the grid will be tried 
     public int retriesForEachEnhancement;
+    // How many times the grid will be enhanced
     public int enhancementAmount;
+    // The power the player has to deal with in the puzzle
     public Power power;
 
+    // Column where the player should place the wall in kukupin puzzles
     private int kukupinWallColumn;
+    // Color that momoni should clear in momoni puzzles
     private GeneratorGridElement momoniColor;
 
+    // Currently only used for Tutut. Elements that should be added by the player.
+    // The generator will add them to the grid whenever it wants to calculate the grid score
     private GeneratorGridData addedElements;
 
+    // The positions of the pieces above Tatana's cut (the ones added by the player).
     private int[] tatanaNextPosX;
     private int[] tatanaNextPosY;
     private int totalTries = 0;
     public PuzzleGenerator()
     {
+        // Default values, should be overwritten by a PuzzleDifficultySetter in most cases
         maxHeight = 6;
         minHeight = 4;
         colorAmount = 3;
@@ -75,23 +100,27 @@ public class PuzzleGenerator
     public GeneratorGridData Generate()
     {
         totalTries++;
-        if (totalTries > 3)
+        if (totalTries > 30)
         {
             return null;
         }
 
+
         if (power == Power.KUKUPIN_WALL)
         {
+            // Decides which column the wall should be placed on
             kukupinWallColumn = Random.Range(0, width);
         }
 
         if (power == Power.MOMONI_CLEAN_COLOR)
         {
+            // Decides which color should be cleared by Momoni at the end of the puzzle
             momoniColor = GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount));
         }
 
         if (power == Power.TATANA_CUT)
         {
+            // Decides the positions of the pieces above Tatana's cut (the ones added by the player)
             int[] tatanaHigherColumns = new int[width];
             List<int> tatanaNextPosXList = new List<int>();
             List<int> tatanaNextPosYList = new List<int>();
@@ -131,8 +160,13 @@ public class PuzzleGenerator
 
         if (power == Power.TUTUT_BICOLOR_PIECE)
         {
+            // If it's Tutut, then pieces that the player will use can't be picked directly from the generated grid,
+            // because the generated grid doesn't contain bicolor pieces.
+            // Thus, the pieces are chosen at the beginning and never changed after.
+            // Enhancements of the grid will try to fit with these pieces.
             addedElements = new GeneratorGridData();
-            int bicolorMoment = Random.Range(0, nextPieceAmount - 1);
+            // When the player should use the power.
+            int bicolorMoment = Random.Range(0, nextPieceAmount - 2);
             for (int i = 0; i < nextPieceAmount; i++)
             {
                 grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount)));
@@ -158,12 +192,16 @@ public class PuzzleGenerator
                 GeneratorGridElement element = new GeneratorGridElement(type, color1, color2);
                 addedElements.SetElementAt(column, grid.GetColumnHeight(column), element);
             }
-            for (int i = 0; i <= bicolorMoment; i++)
+            if (!shouldBePlayableWithoutHold)
             {
-                int exchange = Random.Range(0, bicolorMoment + 1);
-                GeneratorGridElement temp = grid.GetNext(i);
-                grid.SetNext(i, grid.GetNext(exchange));
-                grid.SetNext(exchange, temp);
+                for (int i = 0; i <= bicolorMoment; i++)
+                {
+                    // Switches pieces randomly in order to make the player use the hold button
+                    int exchange = Random.Range(0, bicolorMoment + 1);
+                    GeneratorGridElement temp = grid.GetNext(i);
+                    grid.SetNext(i, grid.GetNext(exchange));
+                    grid.SetNext(exchange, temp);
+                }
             }
         }
 
@@ -210,7 +248,7 @@ public class PuzzleGenerator
                 Debug.Log("trying again because there were not enough high bottles to put in next");
                 return Generate();
             }
-            Solve(nextPlacedGrid, false, power, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
+            Solve(nextPlacedGrid, false, power, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
 
             if (feasibleWithLessPieces)
             {
@@ -232,7 +270,7 @@ public class PuzzleGenerator
         }
         else
         {
-            Solve(grid, false, Power.TUTUT_BICOLOR_PIECE, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
+            Solve(grid, false, Power.TUTUT_BICOLOR_PIECE, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
 
             if (!feasible || feasibleWithLessPieces || feasibleWithoutPower)
             {
@@ -302,11 +340,11 @@ public class PuzzleGenerator
         return true;
     }
 
-    public static void Solve(GeneratorGridData grid, bool canSpeedCombo, Power power, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount)
+    public static void Solve(GeneratorGridData grid, bool canSpeedCombo, Power power, bool stopOnFound, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount, bool ignoreFeasibleWithLessPieces = false, bool ignoreFeasibleWithoutPower = false)
     {
         feasible = false;
-        feasibleWithLessPieces = false;
-        feasibleWithoutPower = false;
+        feasibleWithLessPieces = ignoreFeasibleWithLessPieces;
+        feasibleWithoutPower = ignoreFeasibleWithoutPower;
         bestSolution = null;
         bestScore = 0;
         solutionAmount = 0;
@@ -321,8 +359,8 @@ public class PuzzleGenerator
         }
         System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
         stopWatch.Start();
-        List<int> tried = new List<int>();
-        SolveRec(clone, canSpeedCombo, power, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+        Dictionary<int, bool> tried = new Dictionary<int, bool>();
+        SolveRec(clone, canSpeedCombo, power, stopOnFound, false, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
         //feasible = true;
 
 
@@ -330,26 +368,37 @@ public class PuzzleGenerator
         Debug.Log(stopWatch.ElapsedMilliseconds);
 
     }
+    // test only, to remove
     public static int nonTimes = 0;
     public static int ouiTimes = 0;
 
-    private static void SolveRec(GeneratorGridData grid, bool canSpeedCombo, Power power, ref bool feasible, ref bool feasibleWithLessPieces, ref bool feasibleWithoutPower, ref GeneratorGridData bestSolution, ref int bestScore, ref int solutionAmount, ref List<int> tried)
+    // feasibleWithLessPieces and feasibleWithoutPower should be set to true when calling this if you don't need to know about them
+    private static void SolveRec(GeneratorGridData grid, bool canSpeedCombo, Power power, bool stopOnFound, bool holdWasUsed, ref bool feasible, ref bool feasibleWithLessPieces, ref bool feasibleWithoutPower, ref GeneratorGridData bestSolution, ref int bestScore, ref int solutionAmount, ref Dictionary<int, bool> tried)
     {
+        if (stopOnFound && feasible && feasibleWithLessPieces && feasibleWithoutPower)
+        {
+            return;
+        }
+        // The last thing I tried to reduce the amount of calculation; ended up lowering it by about 30%, but still taking too much time imo
         int gridHashCode = grid.GetHashCode();
         if (power != Power.NONE)
+        {
             gridHashCode *= -1521134295 + 1;
-        if (tried.Contains(gridHashCode))
+        }
+        // test only, to remove
+        if (tried.ContainsKey(gridHashCode))
         {
             nonTimes++;
             return;
         }
         else
         {
-            tried.Add(gridHashCode);
+            tried.Add(gridHashCode, true);
             ouiTimes++;
         }
         GeneratorGridData popper = grid.Clone();
-        if (power == Power.TATANA_CUT && popper.ShouldPop())
+        bool shouldPop = popper.ShouldPop();
+        if (power == Power.TATANA_CUT && shouldPop)
         {
             return;
         }
@@ -358,7 +407,7 @@ public class PuzzleGenerator
             popper.Replace(GeneratorGridElement.TATANA_CUT, GeneratorGridElement.EMPTY);
             popper.Fall();
         }
-        if (popper.ShouldPop())
+        if (shouldPop)
         {
             popper.DoAllPopSteps();
             if (!canSpeedCombo && !popper.IsEmpty(true))
@@ -370,9 +419,10 @@ public class PuzzleGenerator
                 feasible = true;
                 feasibleWithLessPieces |= !popper.GetNext(0).IsEmpty();
                 feasibleWithoutPower |= power == Power.TUTUT_BICOLOR_PIECE || power == Power.MOMONI_CLEAN_COLOR;
-                if (popper.GetScore() > bestScore)
+                int score = popper.GetScore();
+                if (score > bestScore)
                 {
-                    bestScore = popper.GetScore();
+                    bestScore = score;
                     bestSolution = grid;
                 }
                 solutionAmount++;
@@ -390,14 +440,14 @@ public class PuzzleGenerator
                 GeneratorGridData clone = grid.Clone();
                 clone.PlaceElement(x, clone.GetNext(0));
                 clone.PullAllNextElements(0);
-                SolveRec(clone, canSpeedCombo, power, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                SolveRec(clone, canSpeedCombo, power,stopOnFound, holdWasUsed, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
 
                 // Placing the first element as bottle
                 GeneratorGridData clone2 = grid.Clone();
                 clone2.PlaceElement(x, clone2.GetNext(0).GetBottleEquivalent());
 
                 clone2.PullAllNextElements(0);
-                SolveRec(clone2, canSpeedCombo, power, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                SolveRec(clone2, canSpeedCombo, power, stopOnFound, holdWasUsed, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
             }
             if (!grid.GetNext(1).IsEmpty())
             {
@@ -405,59 +455,73 @@ public class PuzzleGenerator
                 GeneratorGridData clone3 = grid.Clone();
                 clone3.PlaceElement(x, clone3.GetNext(1));
                 clone3.PullAllNextElements(1);
-                SolveRec(clone3, canSpeedCombo, power, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                SolveRec(clone3, canSpeedCombo, power, stopOnFound, true, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
 
                 // Placing the second element as bottle
                 GeneratorGridData clone4 = grid.Clone();
                 clone4.PlaceElement(x, clone4.GetNext(1).GetBottleEquivalent());
 
                 clone4.PullAllNextElements(1);
-                SolveRec(clone4, canSpeedCombo, power, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                SolveRec(clone4, canSpeedCombo, power, stopOnFound, true, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
             }
         }
 
-        for (int hold = 0; hold < 2; hold++)
+        for (int currentPiece = 0; currentPiece < 2; currentPiece++)
         {
             if (power == Power.TUTUT_BICOLOR_PIECE)
             {
-                GeneratorGridData clone = grid.Clone();
-                if (!clone.GetNext(hold + 1).IsEmpty())
+                if (currentPiece == 0 && !holdWasUsed)
                 {
-                    for (int i = hold; i < clone.GetNextAmount(); i++)
+                    // In the case hold wasn't used, the player can use Tutut's power on 1st and 2nd piece.
+                    GeneratorGridData clone2 = grid.Clone();
+                    if (UseTututPowerForSolve(clone2, 0, 1))
                     {
-                        if (clone.GetNext(i).IsEmpty())
-                        {
-                            break;
-                        }
-
-                        if (i == hold)
-                        {
-                            clone.SetNext(i, new GeneratorGridElement(ElementType.DANGHOST, clone.GetNext(i).GetColor(), clone.GetNext(i + 1).GetColor()));
-                        }
-                        else
-                        {
-                            clone.SetNext(i, new GeneratorGridElement(ElementType.DANGHOST, clone.GetNext(i).GetColor(), clone.GetNext(i - 1).GetColor()));
-                        }
+                        SolveRec(clone2, canSpeedCombo, Power.NONE, stopOnFound, true, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
                     }
                 }
-                SolveRec(clone, canSpeedCombo, Power.NONE, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                // And in general, the merge starts between the current piece and the piece at index 2, because the other is the hold one.
+                GeneratorGridData clone = grid.Clone();
+                if (UseTututPowerForSolve(clone, currentPiece, 2))
+                {
+                    SolveRec(clone, canSpeedCombo, Power.NONE, stopOnFound, true, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                }
             }
             if (power == Power.MOMONI_CLEAN_COLOR)
             {
                 GeneratorGridData clone = grid.Clone();
-                if (!clone.GetNext(hold).IsEmpty())
+                if (!clone.GetNext(currentPiece).IsEmpty())
                 {
-                    clone.Replace(clone.GetNext(hold).GetColor(), GeneratorGridElement.EMPTY);
+                    clone.Replace(clone.GetNext(currentPiece).GetColor(), GeneratorGridElement.EMPTY);
 
-                    clone.PullAllNextElements(hold);
+                    clone.PullAllNextElements(currentPiece);
                     clone.Fall();
                 }
 
-                SolveRec(clone, canSpeedCombo, Power.NONE, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+                SolveRec(clone, canSpeedCombo, Power.NONE, stopOnFound, holdWasUsed, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
 
             }
         }
     }
+    private static bool UseTututPowerForSolve(GeneratorGridData grid, int currentPiece, int nextPiecesStart)
+    {
+        if (grid.GetNext(nextPiecesStart).IsEmpty())
+        {
+            return false;
+        }
+        grid.SetNext(currentPiece, new GeneratorGridElement(ElementType.DANGHOST, grid.GetNext(currentPiece).GetColor(), grid.GetNext(nextPiecesStart).GetColor()));
+        grid.SetNext(nextPiecesStart, new GeneratorGridElement(ElementType.DANGHOST, grid.GetNext(currentPiece).GetColor(), grid.GetNext(nextPiecesStart).GetColor()));
+        for (int i = nextPiecesStart + 1; i < grid.GetNextAmount(); i++)
+        {
+            if (grid.GetNext(i).IsEmpty())
+            {
+                break;
+            }
+            grid.SetNext(i, new GeneratorGridElement(ElementType.DANGHOST, grid.GetNext(i).GetColor(), grid.GetNext(i - 1).GetColor()));
+        }
+        return true;
+    }
+
+
 
     private void GetGenMultipliers(GeneratorGridData grid,
         out int score,
