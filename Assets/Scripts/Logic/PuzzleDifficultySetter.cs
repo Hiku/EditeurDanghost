@@ -47,6 +47,9 @@ public class PuzzleDifficultySetter
             case PuzzleGenerator.Power.BARBAK_GROUP3:
                 ApplyWithPowerBarbakGroup3(generator);
                 break;
+            case PuzzleGenerator.Power.YIYIFU_PAINT_BOMB:
+                ApplyWithPowerYiyifuPaintBomb(generator);
+                break;
         }
     }
 
@@ -112,5 +115,10 @@ public class PuzzleDifficultySetter
     {
         ApplyWithPowerNone(generator);
         generator.power = PuzzleGenerator.Power.BARBAK_GROUP3;
+    }
+    private void ApplyWithPowerYiyifuPaintBomb(PuzzleGenerator generator)
+    {
+        ApplyWithPowerNone(generator);
+        generator.power = PuzzleGenerator.Power.YIYIFU_PAINT_BOMB;
     }
 }

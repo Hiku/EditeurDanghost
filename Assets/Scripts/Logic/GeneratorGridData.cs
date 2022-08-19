@@ -399,7 +399,7 @@ public class GeneratorGridData
 
     public int GetColumnHeight(int column)
     {
-        for (int i = 9; i >= 0; i--)
+        for (int i = height - 1; i >= 0; i--)
         {
             if (GetElementAt(column, i) != GeneratorGridElement.EMPTY)
             {
