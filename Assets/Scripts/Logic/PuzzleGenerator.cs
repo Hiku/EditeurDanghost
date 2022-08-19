@@ -302,8 +302,7 @@ public class PuzzleGenerator
             if (!feasible)
             {
                 Debug.Log("trying again because puzzle is not feasible");
-                return nextPlacedGrid;
-                //return Generate();
+                return Generate();
 
             }
             else if (feasibleWithLessPieces)
