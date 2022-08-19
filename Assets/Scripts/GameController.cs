@@ -323,7 +323,7 @@ public class GameController : MonoBehaviour
     {
         // Creates a generator with its basic parameters, and gets a puzzle out of it
         PuzzleGenerator generator = new PuzzleGenerator();
-        PuzzleDifficultySetter pds = new PuzzleDifficultySetter(PuzzleGenerator.Power.YIYIFU_PAINT_BOMB, difficulty);
+        PuzzleDifficultySetter pds = new PuzzleDifficultySetter(PuzzleGenerator.Power.YIYIFU_OVNI, difficulty);
         //System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
         //stopWatch.Start();
 
@@ -393,7 +393,10 @@ public class GameController : MonoBehaviour
 
         // Pouvoir Barbak
         //GetCurrentGridData().SetMinGroupSizeToPop(4);
-        PuzzleGenerator.Solve(GetCurrentGridData(), false, PuzzleGenerator.Power.YIYIFU_PAINT_BOMB, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount, true, true);
+
+        //PuzzleGenerator.UseYiyifuPowerForSolve(GetCurrentGridData(), 0, 1, 0);
+
+        PuzzleGenerator.Solve(GetCurrentGridData(), false, PuzzleGenerator.Power.YIYIFU_OVNI, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount, true, true);
         //Debug.Log(feasibleWithLessPieces + " ; " + feasibleWithoutPower);
         if (bestSolution != null)
         {

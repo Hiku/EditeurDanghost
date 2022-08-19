@@ -50,6 +50,10 @@ public class PuzzleDifficultySetter
             case PuzzleGenerator.Power.YIYIFU_PAINT_BOMB:
                 ApplyWithPowerYiyifuPaintBomb(generator);
                 break;
+            case PuzzleGenerator.Power.YIYIFU_OVNI:
+                ApplyWithPowerYiyifuOVNI(generator);
+                break;
+
         }
     }
 
@@ -120,5 +124,10 @@ public class PuzzleDifficultySetter
     {
         ApplyWithPowerNone(generator);
         generator.power = PuzzleGenerator.Power.YIYIFU_PAINT_BOMB;
+    }
+    private void ApplyWithPowerYiyifuOVNI(PuzzleGenerator generator)
+    {
+        ApplyWithPowerNone(generator);
+        generator.power = PuzzleGenerator.Power.YIYIFU_OVNI;
     }
 }
