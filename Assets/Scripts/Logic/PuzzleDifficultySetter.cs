@@ -1,6 +1,8 @@
+using static PuzzleGeneratorSettings;
+
 public class PuzzleDifficultySetter
 {
-    private PuzzleGenerator.Power power;
+    private Power power;
     private float difficulty;
     /// <summary>
     /// 
@@ -16,118 +18,128 @@ public class PuzzleDifficultySetter
     /// 6: Should make us (devs) sweat a bit.
     /// 7: Hardest diffculty puzzle versus should end here. Should be hard for anyone, even after training.
     /// Overall, puzzles with powers should be slightly harder.</param>
-    public PuzzleDifficultySetter(PuzzleGenerator.Power power, float difficulty)
+    public PuzzleDifficultySetter(Power power, float difficulty)
     {
         this.power = power;
         this.difficulty = difficulty;
     }
 
-    public void ApplyTo(PuzzleGenerator generator)
+    public void ApplyTo(PuzzleGeneratorSettings settings)
     {
         switch (power)
         {
-            case PuzzleGenerator.Power.NONE:
-                ApplyWithPowerNone(generator);
+            case Power.NONE:
+                ApplyWithPowerNone(settings);
                 break;
-            case PuzzleGenerator.Power.TATANA_CUT:
-                ApplyWithPowerTatanaCut(generator);
+            case Power.TATANA_CUT:
+                ApplyWithPowerTatanaCut(settings);
                 break;
-            case PuzzleGenerator.Power.GRAVITAK_GRAVITY:
-                ApplyWithPowerGravitakGravity(generator);
+            case Power.TATANA_VERTICAL_CUT:
+                ApplyWithPowerTatanaVerticalCut(settings);
                 break;
-            case PuzzleGenerator.Power.KUKUPIN_WALL:
-                ApplyWithPowerKukupinWall(generator);
+            case Power.GRAVITAK_GRAVITY:
+                ApplyWithPowerGravitakGravity(settings);
                 break;
-            case PuzzleGenerator.Power.MOMONI_CLEAN_COLOR:
-                ApplyWithPowerMomoniCleanColor(generator);
+            case Power.KUKUPIN_WALL:
+                ApplyWithPowerKukupinWall(settings);
                 break;
-            case PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE:
-                ApplyWithPowerTututBicolorPiece(generator);
+            case Power.MOMONI_CLEAN_COLOR:
+                ApplyWithPowerMomoniCleanColor(settings);
                 break;
-            case PuzzleGenerator.Power.BARBAK_GROUP3:
-                ApplyWithPowerBarbakGroup3(generator);
+            case Power.TUTUT_BICOLOR_PIECE:
+                ApplyWithPowerTututBicolorPiece(settings);
                 break;
-            case PuzzleGenerator.Power.YIYIFU_PAINT_BOMB:
-                ApplyWithPowerYiyifuPaintBomb(generator);
+            case Power.BARBAK_GROUP3:
+                ApplyWithPowerBarbakGroup3(settings);
                 break;
-            case PuzzleGenerator.Power.YIYIFU_OVNI:
-                ApplyWithPowerYiyifuOVNI(generator);
+            case Power.YIYIFU_PAINT_BOMB:
+                ApplyWithPowerYiyifuPaintBomb(settings);
+                break;
+            case Power.YIYIFU_OVNI:
+                ApplyWithPowerYiyifuOVNI(settings);
                 break;
 
         }
     }
 
-    private void ApplyWithPowerNone(PuzzleGenerator generator)
+    private void ApplyWithPowerNone(PuzzleGeneratorSettings settings)
     {
-        generator.maxHeight = (int)(System.Math.Min(3 + difficulty * 0.9, 10f));
-        generator.minHeight = (int)(System.Math.Min(1 + difficulty, 9f));
-        generator.colorAmount = (int)(System.Math.Min(3 + difficulty, 6));
-        generator.ticksGoal = (int)(3 + difficulty * 0.6f);
-        generator.minimumTicks = (int)(2 + difficulty * 0.6f);
-        generator.importanceOfTicksGoal = 0.4f;
-        generator.importanceOf1BottlePerChain = 0.5f;
-        generator.importanceOfHighBottles = 1f;
-        generator.importanceOfNotHavingGhosts = System.Math.Max(1 - difficulty / 3f, 0);
-        generator.importanceOfClearing = 1f;
-        generator.isClearingNecessary = true;
-        generator.isNotHavingGhostsNecessary = difficulty < 1f;
-        generator.isHavingAllBottlesOnTopNecessary = false;
-        generator.isHaving1BottlePerChainNecessary = difficulty < 1.5f;
-        generator.isRespectingTicksGoalNecessary = false;
-        generator.nextPieceAmount = (int)System.Math.Min(1.5 + difficulty * 0.6f, 4);
-        generator.shouldBePlayableWithoutHold = difficulty < 2.5f;
-        generator.shouldNextPiecesBeOnlyBottles = false;
-        generator.retriesForEachEnhancement = (int)(20 + difficulty * 25);
-        generator.enhancementAmount = (int)(20 + difficulty * 25);
-        generator.power = PuzzleGenerator.Power.NONE;
+        settings.maxHeight = (int)(System.Math.Min(3 + difficulty * 0.9, 10f));
+        settings.minHeight = (int)(System.Math.Min(1 + difficulty, 9f));
+        settings.colorAmount = (int)(System.Math.Min(3 + difficulty, 6));
+        settings.ticksGoal = (int)(3 + difficulty * 0.6f);
+        settings.minimumTicks = (int)(2 + difficulty * 0.6f);
+        settings.importanceOfTicksGoal = 0.4f;
+        settings.importanceOf1BottlePerChain = 0.5f;
+        settings.importanceOfHighBottles = 1f;
+        settings.importanceOfNotHavingGhosts = System.Math.Max(1 - difficulty / 3f, 0);
+        settings.importanceOfClearing = 1f;
+        settings.isClearingNecessary = true;
+        settings.isNotHavingGhostsNecessary = difficulty < 1f;
+        settings.isHavingAllBottlesOnTopNecessary = false;
+        settings.isHaving1BottlePerChainNecessary = difficulty < 1.5f;
+        settings.isRespectingTicksGoalNecessary = false;
+        settings.nextPieceAmount = (int)System.Math.Min(1.5 + difficulty * 0.6f, 4);
+        settings.shouldBePlayableWithoutHold = difficulty < 2.5f;
+        settings.shouldNextPiecesBeOnlyBottles = false;
+        settings.retriesForEachEnhancement = (int)(20 + difficulty * 25);
+        settings.enhancementAmount = (int)(20 + difficulty * 25);
+        settings.computationTime = 300;
+        settings.power = Power.NONE;
     }
 
-    private void ApplyWithPowerTatanaCut(PuzzleGenerator generator)
+    private void ApplyWithPowerTatanaCut(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.isHaving1BottlePerChainNecessary = false;
-        generator.power = PuzzleGenerator.Power.TATANA_CUT;
+        ApplyWithPowerNone(settings);
+        settings.isHaving1BottlePerChainNecessary = false;
+        settings.power = Power.TATANA_CUT;
+    }
+    private void ApplyWithPowerTatanaVerticalCut(PuzzleGeneratorSettings settings)
+    {
+        ApplyWithPowerNone(settings);
+        settings.power = Power.TATANA_VERTICAL_CUT;
     }
 
-    private void ApplyWithPowerKukupinWall(PuzzleGenerator generator)
+    private void ApplyWithPowerKukupinWall(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.nextPieceAmount = (int)System.Math.Min(2 + difficulty * 0.6f, 4);
-        generator.power = PuzzleGenerator.Power.KUKUPIN_WALL;
+        ApplyWithPowerNone(settings);
+        settings.nextPieceAmount = (int)System.Math.Min(2 + difficulty * 0.6f, 4);
+        settings.power = Power.KUKUPIN_WALL;
     }
 
-    private void ApplyWithPowerGravitakGravity(PuzzleGenerator generator)
+    private void ApplyWithPowerGravitakGravity(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.power = PuzzleGenerator.Power.GRAVITAK_GRAVITY;
+        ApplyWithPowerNone(settings);
+        settings.power = Power.GRAVITAK_GRAVITY;
     }
-    private void ApplyWithPowerMomoniCleanColor(PuzzleGenerator generator)
+    private void ApplyWithPowerMomoniCleanColor(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.minimumTicks--;
-        generator.power = PuzzleGenerator.Power.MOMONI_CLEAN_COLOR;
+        ApplyWithPowerNone(settings);
+        settings.minimumTicks--;
+        settings.power = Power.MOMONI_CLEAN_COLOR;
     }
-    private void ApplyWithPowerTututBicolorPiece(PuzzleGenerator generator)
+    private void ApplyWithPowerTututBicolorPiece(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.nextPieceAmount = (int)System.Math.Min(2 + difficulty * 0.6f, 4);
-        generator.minimumTicks-=2;
-        generator.isHaving1BottlePerChainNecessary = false;
-        generator.power = PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE;
+        ApplyWithPowerNone(settings);
+        settings.nextPieceAmount = (int)System.Math.Min(2 + difficulty * 0.6f, 4);
+        settings.minimumTicks -= 2;
+        settings.isHaving1BottlePerChainNecessary = false;
+        settings.power = Power.TUTUT_BICOLOR_PIECE;
     }
-    private void ApplyWithPowerBarbakGroup3(PuzzleGenerator generator)
+    private void ApplyWithPowerBarbakGroup3(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.power = PuzzleGenerator.Power.BARBAK_GROUP3;
+        ApplyWithPowerNone(settings);
+        settings.power = Power.BARBAK_GROUP3;
     }
-    private void ApplyWithPowerYiyifuPaintBomb(PuzzleGenerator generator)
+    private void ApplyWithPowerYiyifuPaintBomb(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.power = PuzzleGenerator.Power.YIYIFU_PAINT_BOMB;
+        ApplyWithPowerNone(settings);
+        settings.minimumTicks--;
+        settings.power = Power.YIYIFU_PAINT_BOMB;
     }
-    private void ApplyWithPowerYiyifuOVNI(PuzzleGenerator generator)
+    private void ApplyWithPowerYiyifuOVNI(PuzzleGeneratorSettings settings)
     {
-        ApplyWithPowerNone(generator);
-        generator.power = PuzzleGenerator.Power.YIYIFU_OVNI;
+        ApplyWithPowerNone(settings);
+        settings.power = Power.YIYIFU_OVNI;
     }
 }

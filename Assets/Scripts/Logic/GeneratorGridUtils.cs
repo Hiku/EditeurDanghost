@@ -7,6 +7,7 @@ public class GeneratorGridUtils
 
     public static int width = 5;
     public static int height = 10;
+    public static int nextAmount = 12;
 
     public static GeneratorGridElement[] MakeLine()
     {

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static PuzzleGeneratorSettings;
 
 public class GameController : MonoBehaviour
 {
@@ -41,19 +42,20 @@ public class GameController : MonoBehaviour
     [SerializeField]
     Image applyOffsetButtonImage;
 
+    [SerializeField]
+    GameObject generatorPanel;
+
     List<GeneratorGridData> history;
     int currentHistory;
     bool insert;
     int height;
     int width;
-    int nextAmount;
 
     // Start is called before the first frame update
     void Start()
     {
         height = GeneratorGridUtils.height;
         width = GeneratorGridUtils.width;
-        nextAmount = 12;
         history = new List<GeneratorGridData>
         {
             new GeneratorGridData()
@@ -67,6 +69,9 @@ public class GameController : MonoBehaviour
         gridRenderer.SubscribeToGridClicked(OnGridClicked);
         gridRenderer.SubscribeToNextClicked(OnNextClicked);
 
+        //StoryGenerator.GenerateArc(Power.NONE, 0, 2.2f, 50, "nopower_easy", "00");
+        //StoryGenerator.GenerateArc(Power.NONE, 2.5f, 5f, 50, "nopower_inter", "01");
+        //StoryGenerator.GenerateArc(Power.NONE, 5.2f, 7f, 50, "nopower_hard", "02");
     }
 
     public GeneratorGridData GetCurrentGridData()
@@ -318,29 +323,16 @@ public class GameController : MonoBehaviour
         nextInputUpdater.FillWithNextText(GetCurrentGridData());
         UpdateEditorElements();
     }
-    float difficulty = 4.0f;
-    public void TryToFindAllClearModifications()
+    public void OpenGeneratePanel()
     {
-        // Creates a generator with its basic parameters, and gets a puzzle out of it
-        PuzzleGenerator generator = new PuzzleGenerator();
-        PuzzleDifficultySetter pds = new PuzzleDifficultySetter(PuzzleGenerator.Power.YIYIFU_OVNI, difficulty);
-        //System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
-        //stopWatch.Start();
+        generatorPanel.SetActive(true);
+    }
 
-
-        //Debug.Log(difficulty);
-        //difficulty += 0.5f;
-        pds.ApplyTo(generator);
-        GeneratorGridData newGrid = generator.Generate();
-        //stopWatch.Stop();
-        //Debug.Log(stopWatch.ElapsedMilliseconds);
-
-        if (newGrid != null)
-        {
-            AddCurrentToHistory();
-            history[history.Count - 1] = newGrid;
-            UpdateEditorElements();
-        }
+    public void SetAsCurrentGrid(GeneratorGridData grid)
+    {
+        AddCurrentToHistory();
+        history[history.Count - 1] = grid;
+        UpdateEditorElements();
     }
 
     public void FullScreen()
@@ -348,7 +340,6 @@ public class GameController : MonoBehaviour
         Screen.fullScreen = !Screen.fullScreen;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Z) && Input.GetKey(KeyCode.LeftControl))
@@ -395,38 +386,19 @@ public class GameController : MonoBehaviour
         //GetCurrentGridData().SetMinGroupSizeToPop(4);
 
         //PuzzleGenerator.UseYiyifuPowerForSolve(GetCurrentGridData(), 0, 1, 0);
+        UpdateEditorElements();
 
-        PuzzleGenerator.Solve(GetCurrentGridData(), false, PuzzleGenerator.Power.YIYIFU_OVNI, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount, true, true);
-        //Debug.Log(feasibleWithLessPieces + " ; " + feasibleWithoutPower);
+    }
+    public void Solve(Power power)
+    {
+        AddCurrentToHistory();
+
+        PuzzleGenerator.Solve(GetCurrentGridData(), false, power, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount, true, true);
         if (bestSolution != null)
         {
             history[history.Count - 1] = bestSolution;
         }
-
-        //Debug.Log("non " + PuzzleGenerator.nonTimes);
-        //Debug.Log("oui " + PuzzleGenerator.ouiTimes);
-
-        /*List<int> trucs = new List<int>();
-        for(int i = 0; i<50000; i++)
-        {
-            trucs.Add(Random.Range(int.MinValue, int.MaxValue));
-        }
-        System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
-        stopWatch.Start();
-        int amount = 0;
-        for(int i = 0; i<50000; i++)
-        {
-            if (trucs.Contains(i)) amount++;
-        }
-
-        stopWatch.Stop();
-        Debug.Log(stopWatch.ElapsedMilliseconds);
-        Debug.Log(amount);*/
-
-
-        //Debug.Log(PuzzleGenerator.IsBeatableWithoutUsingAllPiecesOrPower(GetCurrentGridData(), false, PuzzleGenerator.Power.TUTUT_BICOLOR_PIECE));
         UpdateEditorElements();
 
     }
-
 }

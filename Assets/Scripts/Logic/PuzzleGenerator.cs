@@ -1,64 +1,16 @@
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using static GeneratorGridUtils;
+using static PuzzleGeneratorSettings;
 
 public class PuzzleGenerator
 {
-    public enum Power
-    {
-        NONE,
-        TATANA_CUT,
-        KUKUPIN_WALL,
-        GRAVITAK_GRAVITY,
-        MOMONI_CLEAN_COLOR,
-        TUTUT_BICOLOR_PIECE,
-        GU_ARMOR,
-        KUSHINAK_STICKY,
-        BARBAK_GROUP3,
-        YIYIFU_PAINT_BOMB,
-        YIYIFU_OVNI
-    }
+    PuzzleGeneratorSettings settings;
 
-    // The maximum height (inclusive) of the puzzle grid columns
-    public float maxHeight;
-    // The minimum height (inclusive) of the puzzle grid columns
-    public float minHeight;
-    // The amount of colors in the puzzle
-    public int colorAmount;
-    // The tick amount that the generator tries to satisfy
-    public int ticksGoal;
+    private System.Diagnostics.Stopwatch stopWatch;
 
-    // Importances are 0: don't try, 1: default importance, and they can be anything above 0
-    public float importanceOfTicksGoal;
-    // 1 bottle per chain is about not having too many bottles popping at the same time, which might be confusing and look inefficient
-    public float importanceOf1BottlePerChain;
-    // Having high bottles makes it feel kind of as if you were playing the real game; you mostly put bottles on top of generated danghosts
-    public float importanceOfHighBottles;
-    // Ghosts can be confusing for beginers, so it might be better to only have only few of them in easy puzzles
-    public float importanceOfNotHavingGhosts;
-    // Puzzles should be clearable for now
-    public float importanceOfClearing;
-
-    // If the conditions set to true are not satisfied, the puzzle will be generated again
-    public bool isClearingNecessary;
-    public bool isNotHavingGhostsNecessary;
-    public bool isHavingAllBottlesOnTopNecessary;
-    public bool isHaving1BottlePerChainNecessary;
-    public bool isRespectingTicksGoalNecessary;
-    // If the tick amount is lower than the minimum, the puzzle will be generated again
-    public int minimumTicks;
-    // The amount of pieces the player should use for the puzzle
-    public int nextPieceAmount;
-    // If the puzzle should be playable without hold, the generator will place pieces in next straightforwardly, which is easier for the player
-    public bool shouldBePlayableWithoutHold;
-    // It might be easier for the player to only have to place pieces as bottles, for the first puzzles
-    public bool shouldNextPiecesBeOnlyBottles;
-    // How many ways of enhancing the grid will be tried 
-    public int retriesForEachEnhancement;
-    // How many times the grid will be enhanced
-    public int enhancementAmount;
-    // The power the player has to deal with in the puzzle
-    public Power power;
+    private System.Random random;
 
     // Column where the player should place the wall in kukupin puzzles
     private int kukupinWallColumn;
@@ -66,6 +18,7 @@ public class PuzzleGenerator
     private GeneratorGridElement momoniColor;
     private GridElementColor yiyifuColor;
     private int yiyifuAmountBeforePower;
+    private int tatanaAmountBeforePower;
 
     // Currently only used for Tutut. Elements that should be added by the player.
     // The generator will add them to the grid whenever it wants to calculate the grid score
@@ -74,63 +27,83 @@ public class PuzzleGenerator
     // The positions of the pieces above Tatana's cut (the ones added by the player).
     private int[] tatanaNextPosX;
     private int[] tatanaNextPosY;
-    private int totalTries = 0;
     public PuzzleGenerator()
     {
+        settings = new PuzzleGeneratorSettings();
         // Default values, should be overwritten by a PuzzleDifficultySetter in most cases
-        maxHeight = 6;
-        minHeight = 4;
-        colorAmount = 3;
-        ticksGoal = 2;
-        importanceOfTicksGoal = 0f;
-        importanceOf1BottlePerChain = 0.5f;
-        importanceOfHighBottles = 1f;
-        importanceOfNotHavingGhosts = 0f;
-        importanceOfClearing = 1f;
-        isClearingNecessary = true;
-        isNotHavingGhostsNecessary = false;
-        isHavingAllBottlesOnTopNecessary = false;
-        isHaving1BottlePerChainNecessary = false;
-        isRespectingTicksGoalNecessary = false;
-        nextPieceAmount = 4;
-        shouldBePlayableWithoutHold = true;
-        shouldNextPiecesBeOnlyBottles = false;
-        retriesForEachEnhancement = 100;
-        enhancementAmount = 100;
-        power = Power.KUKUPIN_WALL;
+        settings.maxHeight = 6;
+        settings.minHeight = 4;
+        settings.colorAmount = 3;
+        settings.ticksGoal = 2;
+        settings.importanceOfTicksGoal = 0f;
+        settings.importanceOf1BottlePerChain = 0.5f;
+        settings.importanceOfHighBottles = 1f;
+        settings.importanceOfNotHavingGhosts = 0f;
+        settings.importanceOfClearing = 1f;
+        settings.isClearingNecessary = true;
+        settings.isNotHavingGhostsNecessary = false;
+        settings.isHavingAllBottlesOnTopNecessary = false;
+        settings.isHaving1BottlePerChainNecessary = false;
+        settings.isRespectingTicksGoalNecessary = false;
+        settings.nextPieceAmount = 4;
+        settings.shouldBePlayableWithoutHold = true;
+        settings.shouldNextPiecesBeOnlyBottles = false;
+        settings.retriesForEachEnhancement = 100;
+        settings.enhancementAmount = 100;
+        settings.power = Power.KUKUPIN_WALL;
+    }
+    public PuzzleGenerator(PuzzleGeneratorSettings settings)
+    {
+        this.settings = settings;
     }
 
     // Generates a puzzle based on the parameters
-    public GeneratorGridData Generate()
+    public GeneratorGridData Generate(ref int progress, int seed, ref bool stop)
     {
-        totalTries++;
-        if (totalTries > 30)
+        random = new System.Random(seed);
+
+        return TryToGenerateOnce(ref progress, ref stop);
+    }
+
+    public static long totalPreparationTime = 0;
+    public static long totalEnhancementTime = 0;
+    public static long totalNextTime = 0;
+    public static long totalSolveTime = 0;
+    public GeneratorGridData TryToGenerateOnce(ref int progress, ref bool stop)
+    {
+        if (stop)
+        {
+            return null;
+        }
+        stopWatch = new System.Diagnostics.Stopwatch();
+        stopWatch.Start();
+        //Interlocked.Increment(ref progress);
+        if (stopWatch.ElapsedMilliseconds / 1000f > settings.computationTime)
         {
             return null;
         }
 
-
-        if (power == Power.KUKUPIN_WALL)
+        if (settings.power == Power.KUKUPIN_WALL)
         {
             // Decides which column the wall should be placed on
-            kukupinWallColumn = Random.Range(0, width);
+            kukupinWallColumn = random.Next(width);
         }
 
-        if (power == Power.MOMONI_CLEAN_COLOR)
+        if (settings.power == Power.MOMONI_CLEAN_COLOR)
         {
             // Decides which color should be cleared by Momoni at the end of the puzzle
-            momoniColor = GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount));
+            momoniColor = GeneratorGridElement.Danghost((GridElementColor)random.Next(settings.colorAmount));
         }
 
-        if (power == Power.TATANA_CUT)
+        if (settings.power == Power.TATANA_CUT)
         {
             // Decides the positions of the pieces above Tatana's cut (the ones added by the player)
             int[] tatanaHigherColumns = new int[width];
             List<int> tatanaNextPosXList = new List<int>();
             List<int> tatanaNextPosYList = new List<int>();
-            for (int i = 0; i < nextPieceAmount; i++)
+            for (int i = 0; i < settings.nextPieceAmount; i++)
             {
-                int x = Random.Range(0, width);
+                int x = random.Next(width);
                 tatanaNextPosXList.Add(x);
                 tatanaNextPosYList.Add(tatanaHigherColumns[x] + FirstYAboveTatanaCut(x));
                 tatanaHigherColumns[x]++;
@@ -143,7 +116,7 @@ public class PuzzleGenerator
         int[] maxHeights = new int[width];
         for (int i = 0; i < maxHeights.Length; i++)
         {
-            maxHeights[i] = (int)Random.Range(minHeight, maxHeight);
+            maxHeights[i] = (int)(random.NextDouble() * (settings.maxHeight - settings.minHeight) + settings.minHeight);
         }
         // Then make a grid with random danghosts
         GeneratorGridData grid = new GeneratorGridData();
@@ -153,7 +126,7 @@ public class PuzzleGenerator
             {
                 if (y < maxHeights[x])
                 {
-                    grid.SetElementAt(x, y, GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount)));
+                    grid.SetElementAt(x, y, GeneratorGridElement.Danghost((GridElementColor)random.Next(settings.colorAmount)));
                 }
                 else
                 {
@@ -162,34 +135,34 @@ public class PuzzleGenerator
             }
         }
 
-        if (power == Power.YIYIFU_PAINT_BOMB)
+        if (settings.power == Power.YIYIFU_PAINT_BOMB)
         {
             // If it's Yiyifu, then the color used for the bomb and when it'll be used has to be defined beforehand
             // The elements Yiyifu places after using the bomb have to be in addedElements too
             addedElements = new GeneratorGridData();
-            yiyifuAmountBeforePower = Random.Range(0, nextPieceAmount);
-            yiyifuColor = (GridElementColor)Random.Range(0, colorAmount);
+            yiyifuAmountBeforePower = random.Next(settings.nextPieceAmount);
+            yiyifuColor = (GridElementColor)random.Next(settings.colorAmount);
             grid.SetNext(yiyifuAmountBeforePower, GeneratorGridElement.Danghost(yiyifuColor));
 
-            for (int i = yiyifuAmountBeforePower + 1; i < nextPieceAmount; i++)
+            for (int i = yiyifuAmountBeforePower + 1; i < settings.nextPieceAmount; i++)
             {
-                grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount)));
+                grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)random.Next(settings.colorAmount)));
             }
-            for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+            for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
             {
-                int column = Random.Range(0, width);
-                ElementType type = Random.Range(0, 3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
+                int column = random.Next(width);
+                ElementType type = random.Next(3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
                 GridElementColor color = (GridElementColor)grid.GetNext(i).GetColor();
                 GeneratorGridElement element = new GeneratorGridElement(type, color);
                 addedElements.SetElementAt(column, Mathf.Max(grid.GetColumnHeight(column), addedElements.GetColumnHeight(column)), element);
             }
 
-            if (!shouldBePlayableWithoutHold)
+            if (!settings.shouldBePlayableWithoutHold)
             {
-                for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+                for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
                 {
                     // Switches pieces randomly in order to make the player use the hold button
-                    int exchange = Random.Range(yiyifuAmountBeforePower, nextPieceAmount);
+                    int exchange = random.Next(yiyifuAmountBeforePower, settings.nextPieceAmount);
                     GeneratorGridElement temp = grid.GetNext(i);
                     grid.SetNext(i, grid.GetNext(exchange));
                     grid.SetNext(exchange, temp);
@@ -197,27 +170,92 @@ public class PuzzleGenerator
             }
 
         }
-        if (power == Power.YIYIFU_OVNI)
+        if (settings.power == Power.TATANA_VERTICAL_CUT)
+        {
+            // The elements Tatana places after using the bomb have to be in addedElements too
+            int column = 0;
+            float highest = 0;
+            bool strictlyHigher = false;
+            for (int i = 0; i < width; i++)
+            {
+                float columnHeight = maxHeights[i];
+                if (i % 2 == 1)
+                {
+                    columnHeight += 0.5f;
+                }
+
+                if (columnHeight > highest)
+                {
+                    highest = columnHeight;
+                    column = i;
+                    strictlyHigher = true;
+                }
+                else if (columnHeight == highest)
+                {
+                    if (random.Next(2) == 1)
+                    {
+                        highest = columnHeight;
+                        column = i;
+                    }
+                    strictlyHigher = false;
+                }
+            }
+
+            if (!strictlyHigher)
+            {
+                maxHeights[column]++;
+            }
+
+            addedElements = new GeneratorGridData();
+            tatanaAmountBeforePower = random.Next(settings.nextPieceAmount + 1);
+            //tatanaAmountBeforePower = 1;
+
+            for (int i = tatanaAmountBeforePower; i < settings.nextPieceAmount; i++)
+            {
+                grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)random.Next(settings.colorAmount)));
+            }
+            for (int i = tatanaAmountBeforePower; i < settings.nextPieceAmount; i++)
+            {
+                ElementType type = random.Next(3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
+                GridElementColor color = (GridElementColor)grid.GetNext(i).GetColor();
+                GeneratorGridElement element = new GeneratorGridElement(type, color);
+                addedElements.SetElementAt(column, addedElements.GetColumnHeight(column), element);
+            }
+
+            if (!settings.shouldBePlayableWithoutHold)
+            {
+                for (int i = tatanaAmountBeforePower; i < settings.nextPieceAmount; i++)
+                {
+                    // Switches pieces randomly in order to make the player use the hold button
+                    int exchange = random.Next(tatanaAmountBeforePower, settings.nextPieceAmount);
+                    GeneratorGridElement temp = grid.GetNext(i);
+                    grid.SetNext(i, grid.GetNext(exchange));
+                    grid.SetNext(exchange, temp);
+                }
+            }
+
+        }
+        if (settings.power == Power.YIYIFU_OVNI)
         {
             // If it's Yiyifu's ovni, then when it'll be used has to be defined beforehand
             // The elements Yiyifu places after using the ovni and the ones he takes with the ovni have to be in addedElements too
             addedElements = new GeneratorGridData();
-            int usedColumn = Random.Range(0, width);
+            int usedColumn = random.Next(width);
 
-            yiyifuAmountBeforePower = Random.Range(0, Mathf.Min(nextPieceAmount, maxHeights[usedColumn]));
+            yiyifuAmountBeforePower = random.Next(Mathf.Max(0, settings.nextPieceAmount - maxHeights[usedColumn]), settings.nextPieceAmount);
 
-            for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+            for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
             {
                 do
                 {
-                    grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount)));
+                    grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)random.Next(settings.colorAmount)));
                 }
                 while (i != 0 && grid.GetNext(i - 1).GetColor() == grid.GetNext(i).GetColor());
             }
-            for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+            for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
             {
                 GridElementColor color = (GridElementColor)grid.GetNext(i).GetColor();
-                int elemAmount = Random.Range(1, Mathf.Min(maxHeights[usedColumn] - (nextPieceAmount - i) + 1, 3) + 1);
+                int elemAmount = random.Next(1, Mathf.Min(maxHeights[usedColumn] - (settings.nextPieceAmount - i) + 1, 3) + 1);
                 bool hadColoredOnes = false;
                 bool wasDanghostBefore = false;
                 bool wasBottleBefore = false;
@@ -226,11 +264,11 @@ public class PuzzleGenerator
                 {
                     GeneratorGridElement element;
 
-                    if (!(isNotHavingGhostsNecessary || (!hadColoredOnes && y == elemAmount - 1)) && (Random.Range(0, 4) == 0 || (wasBottleBefore && Random.Range(0, 3) != 0)))
+                    if (!(settings.isNotHavingGhostsNecessary || (!hadColoredOnes && y == elemAmount - 1)) && (random.Next(4) == 0 || (wasBottleBefore && random.Next(3) != 0)))
                     {
                         element = GeneratorGridElement.GHOST;
                     }
-                    else if (wasBottleBefore || !wasDanghostBefore && Random.Range(0, maxHeight - (maxHeights[usedColumn] - y - 1)) == 0)
+                    else if (wasBottleBefore || !wasDanghostBefore && random.Next((int)settings.maxHeight - (maxHeights[usedColumn] - y - 1)) == 0)
                     {
                         element = GeneratorGridElement.Bottle(color);
                         hadColoredOnes = true;
@@ -245,31 +283,30 @@ public class PuzzleGenerator
                     grid.SetElementAt(usedColumn, maxHeights[usedColumn] - y - 1, element);
                 }
                 maxHeights[usedColumn] -= elemAmount;
-
             }
 
-            if (!shouldBePlayableWithoutHold)
+            if (!settings.shouldBePlayableWithoutHold)
             {
-                for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+                for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
                 {
                     // Switches pieces randomly in order to make the player use the hold button
-                    int exchange = Random.Range(yiyifuAmountBeforePower, nextPieceAmount);
+                    int exchange = random.Next(yiyifuAmountBeforePower, settings.nextPieceAmount);
                     GeneratorGridElement temp = grid.GetNext(i);
                     grid.SetNext(i, grid.GetNext(exchange));
                     grid.SetNext(exchange, temp);
                 }
             }
-            for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+            for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
             {
-                int column = Random.Range(0, width);
-                ElementType type = Random.Range(0, 3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
+                int column = random.Next(width);
+                ElementType type = random.Next(3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
                 GridElementColor color = (GridElementColor)grid.GetNext(i).GetColor();
                 GeneratorGridElement element = new GeneratorGridElement(type, color);
                 addedElements.SetElementAt(column, Mathf.Max(grid.GetColumnHeight(column), addedElements.GetColumnHeight(column)), element);
             }
         }
 
-        if (power == Power.TUTUT_BICOLOR_PIECE)
+        if (settings.power == Power.TUTUT_BICOLOR_PIECE)
         {
             // If it's Tutut, then pieces that the player will use can't be picked directly from the generated grid,
             // because the generated grid doesn't contain bicolor pieces.
@@ -277,16 +314,16 @@ public class PuzzleGenerator
             // Enhancements of the grid will try to fit with these pieces.
             addedElements = new GeneratorGridData();
             // When the player should use the power.
-            int bicolorMoment = Random.Range(0, nextPieceAmount - 2);
+            int bicolorMoment = settings.nextPieceAmount > 2 ? random.Next(settings.nextPieceAmount - 2) : 0;
 
-            for (int i = 0; i < nextPieceAmount; i++)
+            for (int i = 0; i < settings.nextPieceAmount; i++)
             {
-                grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)Random.Range(0, colorAmount)));
+                grid.SetNext(i, GeneratorGridElement.Danghost((GridElementColor)random.Next(settings.colorAmount)));
             }
-            for (int i = 0; i < nextPieceAmount; i++)
+            for (int i = 0; i < settings.nextPieceAmount; i++)
             {
-                int column = Random.Range(0, width);
-                ElementType type = Random.Range(0, 3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
+                int column = random.Next(width);
+                ElementType type = random.Next(3) == 0 ? ElementType.DANGHOST : ElementType.BOTTLE;
                 GridElementColor color1 = (GridElementColor)grid.GetNext(i).GetColor();
                 GridElementColor? color2;
                 if (i < bicolorMoment)
@@ -304,12 +341,12 @@ public class PuzzleGenerator
                 GeneratorGridElement element = new GeneratorGridElement(type, color1, color2);
                 addedElements.SetElementAt(column, Mathf.Max(grid.GetColumnHeight(column), addedElements.GetColumnHeight(column)), element);
             }
-            if (!shouldBePlayableWithoutHold)
+            if (!settings.shouldBePlayableWithoutHold)
             {
                 for (int i = 0; i <= bicolorMoment; i++)
                 {
                     // Switches pieces randomly in order to make the player use the hold button
-                    int exchange = Random.Range(0, bicolorMoment + 1);
+                    int exchange = random.Next(bicolorMoment + 1);
                     GeneratorGridElement temp = grid.GetNext(i);
                     grid.SetNext(i, grid.GetNext(exchange));
                     grid.SetNext(exchange, temp);
@@ -317,12 +354,23 @@ public class PuzzleGenerator
             }
         }
 
+        stopWatch.Stop();
+        Interlocked.Add(ref totalPreparationTime, stopWatch.ElapsedMilliseconds);
+        stopWatch = new System.Diagnostics.Stopwatch();
+        stopWatch.Start();
+
         // And try to apply changes randomly to enhance it
-        int tries = enhancementAmount;
+        int tries = settings.enhancementAmount;
 
         for (int i = 0; i < tries; i++)
         {
-            GeneratorGridData foundGrid = EnhanceGrid(grid, retriesForEachEnhancement, true, 0.9f + (i / enhancementAmount) / 10f, maxHeights);
+            progress = 100 * i / tries;
+            if (stop)
+            {
+                return null;
+            }
+
+            GeneratorGridData foundGrid = EnhanceGrid(grid, i / 2 + 5, true, 0.9f + (i / settings.enhancementAmount) / 10f, maxHeights);
             if (foundGrid != null)
             {
                 grid = foundGrid;
@@ -333,24 +381,20 @@ public class PuzzleGenerator
         if (!RespectsParameterConditions(grid))
         {
             Debug.Log("trying again because the chain doesn't fit the parameter hard conditions");
-            return Generate();
+            return TryToGenerateOnce(ref progress, ref stop);
         }
 
-        GetGenMultipliers(grid, out int score,
-            out int ticks,
-         out float _,
-         out float _,
-         out float _,
-         out float _,
-         out float _,
-         out float _);
+        stopWatch.Stop();
+        Interlocked.Add(ref totalEnhancementTime, stopWatch.ElapsedMilliseconds);
+        stopWatch = new System.Diagnostics.Stopwatch();
+        stopWatch.Start();
 
-        // Transforms the chain into a puzzle by placing a few pieces the hand of the user
-        int nextPlaceTries = power == Power.GRAVITAK_GRAVITY ? 3 : 50;
+        // Transforms the chain into a puzzle by placing a few pieces in the hand of the user
+        int nextPlaceTries = settings.power == Power.GRAVITAK_GRAVITY ? 3 : 50;
         GeneratorGridData nextPlacedGrid = null;
-        if (nextPieceAmount > 0)
+        if (settings.nextPieceAmount > 0)
         {
-            if (power == Power.TUTUT_BICOLOR_PIECE)
+            if (settings.power == Power.TUTUT_BICOLOR_PIECE)
             {
                 nextPlacedGrid = grid;
             }
@@ -358,17 +402,21 @@ public class PuzzleGenerator
             while (nextPlacedGrid == null && nextPlaceTries >= 0)
             {
                 nextPlaceTries--;
-                if (power == Power.YIYIFU_PAINT_BOMB || power == Power.YIYIFU_OVNI)
+                if (settings.power == Power.TATANA_VERTICAL_CUT)
+                {
+                    nextPlacedGrid = PlaceIntoNext(grid, tatanaAmountBeforePower);
+                }
+                else if (settings.power == Power.YIYIFU_PAINT_BOMB || settings.power == Power.YIYIFU_OVNI)
                 {
                     nextPlacedGrid = PlaceIntoNext(grid, yiyifuAmountBeforePower);
-                    if (power == Power.YIYIFU_OVNI)
+                    if (settings.power == Power.YIYIFU_OVNI)
                     {
-                        for (int i = yiyifuAmountBeforePower; i < nextPieceAmount; i++)
+                        for (int i = yiyifuAmountBeforePower; i < settings.nextPieceAmount; i++)
                         {
                             GridElementColor nextColor;
                             do
                             {
-                                nextColor = (GridElementColor)Random.Range(0, colorAmount);
+                                nextColor = (GridElementColor)random.Next(settings.colorAmount);
                             }
                             while (nextPlacedGrid.GetAmountOf(nextColor) == 0);
                             nextPlacedGrid.SetNext(i, GeneratorGridElement.Danghost(nextColor));
@@ -377,42 +425,50 @@ public class PuzzleGenerator
                 }
                 else
                 {
-                    nextPlacedGrid = PlaceIntoNext(grid, nextPieceAmount);
+                    nextPlacedGrid = PlaceIntoNext(grid, settings.nextPieceAmount);
                 }
             }
             if (nextPlacedGrid == null)
             {
                 Debug.Log("trying again because there were not enough high bottles to put in next");
-                return Generate();
+                return TryToGenerateOnce(ref progress, ref stop);
             }
-            Solve(nextPlacedGrid, false, power, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
+            stopWatch.Stop();
+            Interlocked.Add(ref totalNextTime, stopWatch.ElapsedMilliseconds);
+
+            stopWatch = new System.Diagnostics.Stopwatch();
+            stopWatch.Start();
+
+            Solve(nextPlacedGrid, false, settings.power, true, out bool feasible, out bool feasibleWithLessPieces, out bool feasibleWithoutPower, out GeneratorGridData bestSolution, out int bestScore, out int solutionAmount);
+            stopWatch.Stop();
+            Interlocked.Add(ref totalSolveTime, stopWatch.ElapsedMilliseconds);
 
             if (!feasible)
             {
                 Debug.Log("trying again because puzzle is not feasible");
-                return Generate();
-
+                return TryToGenerateOnce(ref progress, ref stop);
             }
             else if (feasibleWithLessPieces)
             {
                 Debug.Log("trying again because puzzle is feasible with less pieces");
-                return Generate();
+                return TryToGenerateOnce(ref progress, ref stop);
             }
             else if (feasibleWithoutPower)
             {
                 Debug.Log("trying again because puzzle is feasible without power");
-                return Generate();
+                return TryToGenerateOnce(ref progress, ref stop);
             }
+            Debug.Log("Puzzle was not feasible with less pieces");
             return nextPlacedGrid;
 
         }
         else
         {
+            Debug.Log("a");
             return grid;
         }
 
     }
-
     private bool RespectsParameterConditions(GeneratorGridData grid)
     {
         GetGenMultipliers(grid,
@@ -424,7 +480,7 @@ public class PuzzleGenerator
          out float bottleHeightMultiplier,
          out float ghostAmountMultiplier,
          out float elementAfterPoppedMultiplier);
-        if (ticks < minimumTicks)
+        if (ticks < settings.minimumTicks)
         {
             GetGenMultipliers(grid,
              out int _,
@@ -436,30 +492,30 @@ public class PuzzleGenerator
              out float _,
              out float _);
 
-            Debug.Log($"ticks are too low : {ticks} < {minimumTicks}");
+            Debug.Log($"ticks are too low : {ticks} < {settings.minimumTicks}");
             return false;
         }
-        if (isRespectingTicksGoalNecessary && ticksGoalMultiplier < 1f)
+        if (settings.isRespectingTicksGoalNecessary && ticksGoalMultiplier < 1f)
         {
             Debug.Log("chain doesn't respect ticks goal");
             return false;
         }
-        if (isHaving1BottlePerChainNecessary && multipleBottlePerChainMultiplier < 1f)
+        if (settings.isHaving1BottlePerChainNecessary && multipleBottlePerChainMultiplier < 1f)
         {
             Debug.Log("chain has more than 1 bottle per tick");
             return false;
         }
-        if (isHavingAllBottlesOnTopNecessary && bottleHeightMultiplier < 1f)
+        if (settings.isHavingAllBottlesOnTopNecessary && bottleHeightMultiplier < 1f)
         {
             Debug.Log("chain doesn't have all bottles on top");
             return false;
         }
-        if (isNotHavingGhostsNecessary && ghostAmountMultiplier < 1f)
+        if (settings.isNotHavingGhostsNecessary && ghostAmountMultiplier < 1f)
         {
             Debug.Log("chain has ghosts");
             return false;
         }
-        if (isClearingNecessary && elementAfterPoppedMultiplier < 1f)
+        if (settings.isClearingNecessary && elementAfterPoppedMultiplier < 1f)
         {
             Debug.Log("chain doesn't clear");
             return false;
@@ -500,9 +556,6 @@ public class PuzzleGenerator
         Debug.Log(stopWatch.ElapsedMilliseconds);
 
     }
-    // test only, to remove
-    public static int nonTimes = 0;
-    public static int ouiTimes = 0;
 
     // feasibleWithLessPieces and feasibleWithoutPower should be set to true when calling this if you don't need to know about them
     private static void SolveRec(GeneratorGridData grid, bool canSpeedCombo, Power power, bool stopOnFound, bool holdWasUsed, ref bool feasible, ref bool feasibleWithLessPieces, ref bool feasibleWithoutPower, ref GeneratorGridData bestSolution, ref int bestScore, ref int solutionAmount, ref Dictionary<int, bool> tried)
@@ -520,13 +573,11 @@ public class PuzzleGenerator
         // test only, to remove
         if (tried.ContainsKey(gridHashCode))
         {
-            nonTimes++;
             return;
         }
         else
         {
             tried.Add(gridHashCode, true);
-            ouiTimes++;
         }
         GeneratorGridData popper = grid.Clone();
         bool shouldPop = popper.ShouldPop();
@@ -540,9 +591,13 @@ public class PuzzleGenerator
             popper.Fall();
             shouldPop = popper.ShouldPop();
         }
-        if (shouldPop)
+        if (shouldPop || popper.IsEmpty(true))
         {
             popper.DoAllPopSteps();
+            if (!popper.IsEmpty(true) && grid.GetNext(0).IsEmpty() && power == Power.TATANA_VERTICAL_CUT)
+            {
+                SolveRec(popper, canSpeedCombo, power, stopOnFound, holdWasUsed, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+            }
             if (!canSpeedCombo && !popper.IsEmpty(true))
             {
                 return;
@@ -551,7 +606,7 @@ public class PuzzleGenerator
             {
                 feasible = true;
                 feasibleWithLessPieces |= !popper.GetNext(0).IsEmpty();
-                feasibleWithoutPower |= power == Power.TUTUT_BICOLOR_PIECE || power == Power.MOMONI_CLEAN_COLOR;
+                feasibleWithoutPower |= power == Power.TATANA_VERTICAL_CUT || power == Power.TUTUT_BICOLOR_PIECE || power == Power.MOMONI_CLEAN_COLOR || power == Power.YIYIFU_PAINT_BOMB || power == Power.YIYIFU_OVNI || power == Power.BARBAK_GROUP3;
                 int score = popper.GetScore();
                 if (score > bestScore)
                 {
@@ -672,6 +727,12 @@ public class PuzzleGenerator
 
             }
         }
+        if (power == Power.TATANA_VERTICAL_CUT)
+        {
+            GeneratorGridData clone = grid.Clone();
+            UseTatanaPowerForSolve(clone);
+            SolveRec(clone, canSpeedCombo, Power.NONE, stopOnFound, holdWasUsed, ref feasible, ref feasibleWithLessPieces, ref feasibleWithoutPower, ref bestSolution, ref bestScore, ref solutionAmount, ref tried);
+        }
     }
     private static bool UseTututPowerForSolve(GeneratorGridData grid, int currentPiece, int nextPiecesStart)
     {
@@ -690,6 +751,38 @@ public class PuzzleGenerator
             grid.SetNext(i, new GeneratorGridElement(ElementType.DANGHOST, grid.GetNext(i).GetColor(), grid.GetNext(i - 1).GetColor()));
         }
         return true;
+    }
+    private static bool UseTatanaPowerForSolve(GeneratorGridData grid)
+    {
+        int column = 0;
+        float highest = 0;
+        bool strictlyHigher = false;
+        for (int i = 0; i < width; i++)
+        {
+            float columnHeight = grid.GetColumnHeight(i);
+            if (i % 2 == 1)
+            {
+                columnHeight += 0.5f;
+            }
+
+            if (columnHeight > highest)
+            {
+                highest = columnHeight;
+                column = i;
+                strictlyHigher = true;
+            }
+            else if (columnHeight == highest)
+            {
+                strictlyHigher = false;
+            }
+        }
+
+        for (int y = 0; y < 12; y++)
+        {
+            grid.SetElementAt(column, y, GeneratorGridElement.EMPTY);
+        }
+
+        return strictlyHigher;
     }
 
     public static void UseYiyifuPowerForSolve(GeneratorGridData grid, int currentPiece, int nextPiecesStart, int column)
@@ -800,10 +893,10 @@ public class PuzzleGenerator
     {
         GeneratorGridData popper = grid.Clone();
         popper.ResetScore();
-        popper.SetGravityReversed(power == Power.GRAVITAK_GRAVITY);
+        popper.SetGravityReversed(settings.power == Power.GRAVITAK_GRAVITY);
         powerMultiplier = 1;
 
-        if (power == Power.YIYIFU_PAINT_BOMB)
+        if (settings.power == Power.YIYIFU_PAINT_BOMB)
         {
             if (popper.ShouldPop())
             {
@@ -815,7 +908,7 @@ public class PuzzleGenerator
             }
             UseYiyifuPowerForSolve(popper, yiyifuColor);
         }
-        if (power == Power.YIYIFU_OVNI)
+        if (settings.power == Power.YIYIFU_OVNI)
         {
             if (popper.ShouldPop())
             {
@@ -827,7 +920,9 @@ public class PuzzleGenerator
             }
         }
 
-        if (power == Power.TUTUT_BICOLOR_PIECE)
+
+
+        if (settings.power == Power.TUTUT_BICOLOR_PIECE)
         {
             if (popper.ShouldPop())
             {
@@ -838,7 +933,7 @@ public class PuzzleGenerator
                 powerMultiplier = Mathf.Max(1 - Mathf.Sqrt(popper.GetAmountOf(ElementType.BOTTLE)) / 4f, 0);
             }
         }
-        if (power == Power.TUTUT_BICOLOR_PIECE || power == Power.YIYIFU_PAINT_BOMB || power == Power.YIYIFU_OVNI)
+        if (settings.power == Power.TUTUT_BICOLOR_PIECE || settings.power == Power.YIYIFU_PAINT_BOMB || settings.power == Power.YIYIFU_OVNI)
         {
             for (int x = 0; x < width; x++)
             {
@@ -852,12 +947,12 @@ public class PuzzleGenerator
             }
         }
 
-        if (power == Power.GRAVITAK_GRAVITY)
+        if (settings.power == Power.GRAVITAK_GRAVITY)
         {
             popper.Fall();
         }
 
-        if (power == Power.MOMONI_CLEAN_COLOR)
+        if (settings.power == Power.MOMONI_CLEAN_COLOR)
         {
             if (popper.ShouldPop())
             {
@@ -870,7 +965,7 @@ public class PuzzleGenerator
             }
         }
 
-        if (power == Power.BARBAK_GROUP3)
+        if (settings.power == Power.BARBAK_GROUP3)
         {
             if (popper.ShouldPop())
             {
@@ -899,8 +994,31 @@ public class PuzzleGenerator
                 }
             }
         }
+        if (settings.power == Power.TATANA_VERTICAL_CUT)
+        {
+            if (tatanaAmountBeforePower < settings.nextPieceAmount)
+            {
+                UseTatanaPowerForSolve(popper);
+                powerMultiplier = 1;
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        if (!addedElements.GetElementAt(x, y).IsEmpty())
+                        {
+                            if (!popper.GetElementAt(x, y).IsEmpty())
+                            {
+                                powerMultiplier = 0;
+                            }
+                            popper.SetElementAt(x, y, addedElements.GetElementAt(x, y));
 
-        if (power == Power.TATANA_CUT)
+                        }
+                    }
+                }
+
+            }
+        }
+        if (settings.power == Power.TATANA_CUT)
         {
             popper.TatanaCut();
             if (popper.ShouldPop())
@@ -911,7 +1029,7 @@ public class PuzzleGenerator
             popper.Replace(GeneratorGridElement.TATANA_CUT, GeneratorGridElement.EMPTY);
         }
 
-        if (power == Power.KUKUPIN_WALL)
+        if (settings.power == Power.KUKUPIN_WALL)
         {
             int wallHeight = popper.ContainsHighKukupinWall(kukupinWallColumn);
             if (wallHeight != -1)
@@ -942,11 +1060,18 @@ public class PuzzleGenerator
                 over = true;
             }
         }
-        ticksGoalMultiplier = importanceOfTicksGoal == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(System.Math.Abs(ticks - ticksGoal)) / (5f / importanceOfTicksGoal), 0);
-        multipleBottlePerChainMultiplier = importanceOf1BottlePerChain == 0 ? 1 : System.Math.Max(1f - multipleBottlePerChainMalus / (7f / importanceOf1BottlePerChain), 0);
-        bottleHeightMultiplier = importanceOfHighBottles == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(bottleHeightMalus) / (5f / importanceOfHighBottles), 0);
-        ghostAmountMultiplier = importanceOfNotHavingGhosts == 0 ? 1 : System.Math.Max(1f - grid.GetAmountOf(ElementType.GHOST) / (40f / importanceOfNotHavingGhosts), 0);
-        elementAfterPoppedMultiplier = importanceOfClearing == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(50 - popper.GetAmountOf(ElementType.EMPTY) - popper.GetAmountOf(ElementType.KUKUPIN_WALL)) / (10f / importanceOfClearing), 0);
+        if (settings.power == Power.TATANA_VERTICAL_CUT)
+        {
+            if (tatanaAmountBeforePower == settings.nextPieceAmount)
+            {
+                UseTatanaPowerForSolve(popper);
+            }
+        }
+        ticksGoalMultiplier = settings.importanceOfTicksGoal == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(System.Math.Abs(ticks - settings.ticksGoal)) / (5f / settings.importanceOfTicksGoal), 0);
+        multipleBottlePerChainMultiplier = settings.importanceOf1BottlePerChain == 0 ? 1 : System.Math.Max(1f - multipleBottlePerChainMalus / (7f / settings.importanceOf1BottlePerChain), 0);
+        bottleHeightMultiplier = settings.importanceOfHighBottles == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(bottleHeightMalus) / (5f / settings.importanceOfHighBottles), 0);
+        ghostAmountMultiplier = settings.importanceOfNotHavingGhosts == 0 ? 1 : System.Math.Max(1f - grid.GetAmountOf(ElementType.GHOST) / (40f / settings.importanceOfNotHavingGhosts), 0);
+        elementAfterPoppedMultiplier = settings.importanceOfClearing == 0 ? 1 : System.Math.Max(1f - (float)System.Math.Sqrt(50 - popper.GetAmountOf(ElementType.EMPTY) - popper.GetAmountOf(ElementType.KUKUPIN_WALL)) / (10f / settings.importanceOfClearing), 0);
         score = popper.GetScore();
     }
     // Gets the score of a chain based on the parameters
@@ -970,7 +1095,7 @@ public class PuzzleGenerator
     public GeneratorGridData PlaceIntoNext(GeneratorGridData grid, int amountToPlace = 4)
     {
         GeneratorGridData clone = grid.Clone();
-        clone.SetGravityReversed(power == Power.GRAVITAK_GRAVITY);
+        clone.SetGravityReversed(settings.power == Power.GRAVITAK_GRAVITY);
         // Elements to place in next for each column
         List<GeneratorGridElement>[] elementByColumn = new List<GeneratorGridElement>[width];
         for (int x = 0; x < width; x++)
@@ -980,7 +1105,7 @@ public class PuzzleGenerator
 
         GeneratorGridElement firstBottle = GeneratorGridElement.EMPTY;
         int firstBottleColumn = -1;
-        if (power == Power.GRAVITAK_GRAVITY)
+        if (settings.power == Power.GRAVITAK_GRAVITY)
         {
             clone.Fall();
         }
@@ -996,7 +1121,7 @@ public class PuzzleGenerator
                     for (int i = 0; i < neighborsYs.Length; i++)
                     {
                         GeneratorGridElement neighbor = clone.GetElementAt(neighborXs[i], neighborsYs[i]);
-                        if (neighbor.IsDanghost() && neighbor.IsSameColorAs(clone.GetElementAt(x, y)) && (power != Power.TATANA_CUT || IsAboveTatanaCut(neighborXs[i], neighborsYs[i])))
+                        if (neighbor.IsDanghost() && neighbor.IsSameColorAs(clone.GetElementAt(x, y)) && (settings.power != Power.TATANA_CUT || IsAboveTatanaCut(neighborXs[i], neighborsYs[i])))
                         {
                             firstBottleColumn = x;
                         }
@@ -1006,11 +1131,11 @@ public class PuzzleGenerator
         }
         if (firstBottleColumn == -1)
         {
-            if (power == Power.MOMONI_CLEAN_COLOR)
+            if (settings.power == Power.MOMONI_CLEAN_COLOR)
             {
                 firstBottle = momoniColor;
             }
-            else if (power != Power.TATANA_CUT && power != Power.BARBAK_GROUP3 && power != Power.YIYIFU_PAINT_BOMB && power != Power.YIYIFU_OVNI)
+            else if (settings.power != Power.TATANA_CUT && settings.power != Power.BARBAK_GROUP3 && settings.power != Power.YIYIFU_PAINT_BOMB && settings.power != Power.YIYIFU_OVNI && settings.power != Power.TATANA_VERTICAL_CUT)
             {
                 Debug.LogWarning("Error: There was no bottle to trigger the combo");
                 return null;
@@ -1020,7 +1145,7 @@ public class PuzzleGenerator
         {
             firstBottle = clone.GetElementAt(firstBottleColumn, clone.GetColumnHeight(firstBottleColumn) - 1);
             clone.SetElementAt(firstBottleColumn, clone.GetColumnHeight(firstBottleColumn) - 1, GeneratorGridElement.EMPTY);
-            if (power == Power.GRAVITAK_GRAVITY)
+            if (settings.power == Power.GRAVITAK_GRAVITY)
             {
                 clone.Fall();
                 if (clone.ShouldPop())
@@ -1032,11 +1157,11 @@ public class PuzzleGenerator
         }
         int amountInElementsByColumn = amountToPlace - 1;
         int alreadyInElementsByColumn = 0;
-        if (power == Power.TATANA_CUT || power == Power.BARBAK_GROUP3 || power == Power.YIYIFU_PAINT_BOMB || power == Power.YIYIFU_OVNI)
+        if (settings.power == Power.TATANA_CUT || settings.power == Power.BARBAK_GROUP3 || settings.power == Power.YIYIFU_PAINT_BOMB || settings.power == Power.YIYIFU_OVNI || (firstBottleColumn == -1 && settings.power == Power.TATANA_VERTICAL_CUT))
         {
             amountInElementsByColumn = amountToPlace;
         }
-        if (power == Power.KUKUPIN_WALL)
+        if (settings.power == Power.KUKUPIN_WALL)
         {
             amountInElementsByColumn -= 1;
             while (clone.GetElementAt(kukupinWallColumn, clone.GetColumnHeight(kukupinWallColumn) - 1) != GeneratorGridElement.KUKUPIN_WALL)
@@ -1090,11 +1215,11 @@ public class PuzzleGenerator
                 {
                     chances[x] = 0;
                 }
-                if (shouldNextPiecesBeOnlyBottles && clone.GetElementAt(x, y).IsDanghost())
+                if (settings.shouldNextPiecesBeOnlyBottles && clone.GetElementAt(x, y).IsDanghost())
                 {
                     chances[x] = 0;
                 }
-                if (power == Power.TATANA_CUT && !IsAboveTatanaCut(x, y))
+                if (settings.power == Power.TATANA_CUT && !IsAboveTatanaCut(x, y))
                 {
                     chances[x] = 0;
                 }
@@ -1106,13 +1231,13 @@ public class PuzzleGenerator
                 return null;
             }
 
-            float random = Random.Range(0, totalChances);
+            float randomValue = (float)(random.NextDouble() * totalChances);
             for (int x = 0; x < width; x++)
             {
-                random -= chances[x];
-                if (random < 0)
+                randomValue -= chances[x];
+                if (randomValue < 0)
                 {
-                    if (power == Power.GRAVITAK_GRAVITY)
+                    if (settings.power == Power.GRAVITAK_GRAVITY)
                     {
                         // We have to be able to respect the order, so it's as if it was only one column
                         elementByColumn[0].Add(clone.GetElementAt(x, clone.GetColumnHeight(x) - 1).GetDanghostEquivalent());
@@ -1122,7 +1247,7 @@ public class PuzzleGenerator
                         elementByColumn[x].Add(clone.GetElementAt(x, clone.GetColumnHeight(x) - 1).GetDanghostEquivalent());
                     }
                     clone.SetElementAt(x, clone.GetColumnHeight(x) - 1, GeneratorGridElement.EMPTY);
-                    if (power == Power.GRAVITAK_GRAVITY)
+                    if (settings.power == Power.GRAVITAK_GRAVITY)
                     {
                         clone.Fall();
                         if (clone.ShouldPop())
@@ -1145,13 +1270,13 @@ public class PuzzleGenerator
         while (amountInElementsByColumn > 0)
         {
             // To simplify the code, if the puzzle should be playable without the use of hold, we just use the hold everytime
-            if (shouldBePlayableWithoutHold || Random.Range(0, 3) == 0)
+            if (settings.shouldBePlayableWithoutHold || random.Next(3) == 0)
             {
                 // Hold and Unhold
                 if (hold == GeneratorGridElement.EMPTY)
                 {
                     // hold
-                    int randomElement = Random.Range(0, amountInElementsByColumn);
+                    int randomElement = random.Next(amountInElementsByColumn);
                     for (int x = 0; x < elementByColumn.Length; x++)
                     {
                         randomElement -= elementByColumn[x].Count;
@@ -1181,7 +1306,7 @@ public class PuzzleGenerator
             else
             {
                 // Place directly in next
-                int randomElement = Random.Range(0, amountInElementsByColumn);
+                int randomElement = random.Next(amountInElementsByColumn);
                 for (int x = 0; x < elementByColumn.Length; x++)
                 {
                     randomElement -= elementByColumn[x].Count;
@@ -1210,12 +1335,12 @@ public class PuzzleGenerator
 
             clone.SetNext(currentNextIndex, hold);
         }
-        if (power == Power.GRAVITAK_GRAVITY)
+        if (settings.power == Power.GRAVITAK_GRAVITY)
         {
             clone.SetGravityReversed(false);
             clone.Fall();
         }
-        if (power == Power.KUKUPIN_WALL)
+        if (settings.power == Power.KUKUPIN_WALL)
         {
             clone.SetNext(0, GeneratorGridElement.KUKUPIN_WALL);
             int wallHeight = clone.GetColumnHeight(kukupinWallColumn) - 1;
@@ -1226,7 +1351,7 @@ public class PuzzleGenerator
             }
             int randomizeFromY;
             int randomizeToY;
-            if (wallHeight + 2 < maxHeight)
+            if (wallHeight + 2 < settings.maxHeight)
             {
                 randomizeFromY = 0;
                 randomizeToY = 2;
@@ -1234,7 +1359,8 @@ public class PuzzleGenerator
             else
             {
                 randomizeFromY = 1;
-                randomizeToY = (int)Random.Range(minHeight, maxHeight) - wallHeight;
+
+                randomizeToY = (int)(random.NextDouble() * (settings.maxHeight - settings.minHeight) + settings.minHeight) - wallHeight;
             }
             for (int y = randomizeFromY; y <= randomizeToY; y++)
             {
@@ -1243,8 +1369,8 @@ public class PuzzleGenerator
                     GeneratorGridElement randomElement;
                     do
                     {
-                        GridElementColor randomColor = (GridElementColor)Random.Range(0, colorAmount);
-                        if (Random.Range(0, 2) == 0)
+                        GridElementColor randomColor = (GridElementColor)random.Next(settings.colorAmount);
+                        if (random.Next(2) == 0)
                         {
                             randomElement = GeneratorGridElement.Danghost(randomColor);
                         }
@@ -1270,7 +1396,7 @@ public class PuzzleGenerator
         {
             tries--;
             GeneratorGridData clone = baseGrid.Clone();
-            int changeAmount = Random.Range(1, 10);
+            int changeAmount = random.Next(1, 10);
             for (int i = 0; i < changeAmount; i++)
             {
                 GeneratorGridElement randomElement;
@@ -1278,17 +1404,17 @@ public class PuzzleGenerator
                 int randomY;
                 do
                 {
-                    GridElementColor randomColor = (GridElementColor)Random.Range(0, colorAmount);
+                    GridElementColor randomColor = (GridElementColor)random.Next(settings.colorAmount);
 
-                    if (power == Power.KUKUPIN_WALL && Random.Range(0, 10) == 0)
+                    if (settings.power == Power.KUKUPIN_WALL && random.Next(10) == 0)
                     {
                         randomElement = GeneratorGridElement.KUKUPIN_WALL;
                     }
-                    else if (Random.Range(0, 9) == 0)
+                    else if (random.Next(9) == 0)
                     {
                         randomElement = GeneratorGridElement.GHOST;
                     }
-                    else if (Random.Range(0, 3) == 0)
+                    else if (random.Next(3) == 0)
                     {
                         randomElement = GeneratorGridElement.Bottle(randomColor);
                     }
@@ -1297,16 +1423,16 @@ public class PuzzleGenerator
                         randomElement = GeneratorGridElement.Danghost(randomColor);
                     }
 
-                    if (power == Power.TATANA_CUT && Random.Range(0, 5) == 0)
+                    if (settings.power == Power.TATANA_CUT && random.Next(5) == 0)
                     {
-                        int randomTatanaNext = Random.Range(0, tatanaNextPosX.Length);
+                        int randomTatanaNext = random.Next(tatanaNextPosX.Length);
                         randomX = tatanaNextPosX[randomTatanaNext];
                         randomY = tatanaNextPosY[randomTatanaNext];
                     }
                     else
                     {
-                        randomX = Random.Range(0, width);
-                        randomY = Random.Range(0, System.Math.Min(baseGrid.GetHighestLine() + 1, maxChangeHeights[randomX]));
+                        randomX = random.Next(width);
+                        randomY = random.Next(System.Math.Min(baseGrid.GetHighestLine() + 1, maxChangeHeights[randomX]));
                     }
                 } while (clone.GetElementAt(randomX, randomY) == randomElement);
                 clone.SetElementAt(randomX, randomY, randomElement);

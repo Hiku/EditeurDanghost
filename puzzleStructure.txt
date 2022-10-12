@@ -10,30 +10,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d44957c2548fd249aede090d05c2da3, type: 3}
-  m_Name: Gravitak1
+  m_Name: %PuzzleName%
   m_EditorClassIdentifier: 
   scriptableID: -1
-  backgroundSprite: {fileID: 21300000, guid: b710cf81163780e41a61bbc91d7fa27d, type: 3}
-  backgroundAccesss: []
-  overrideSkin: 0
+  musicLauncher:
+    musicsThatCanBePlayed: 06000000
+    fadeTime: 2
+    startAtMusicStart: 1
+  backgrounds: 
+  overrideSkin: 1
   fightSummary: Default_Summary
   gameDuration: -1
-  sizeY: 10
+  sizeY: %sizeY%
   additionalGrowLine: 0
   startSpeedMultiplier: 1
   playableByPlayer:
   - {fileID: 11400000, guid: 28951852c7ca80841a43c43749d01d54, type: 2}
-  playerDifficulty: 1
-  playerTeam: 0
+  playerDifficulty: 4
+  playerTeam: 2
   ennemyCharacters: []
   nbColor: 6
+  allowDifficultyColorReduc: 1
+  allowGeneralSwap: 1
+  allowPlayerSwap: 1
+  forceBoardIntro: 0
   allowPoops: 0
   gridIsGoingUp: 0
   gridAccelInIntro: 0
   startDialogue: {fileID: 0}
   EnablePowers: 0
   winnerIsLastSurvivor: 1
-  powerAtStart: %powerAtStart%
+  isMeantToLose: 0
+  lockPlayersPowerBars: 0
+  lockIAPowers: 0
+  powerObtentionMultiplier: 1
+  showUpTutoInBoard: 0
   inputTutoToShowDefault: 
   bossFight: {fileID: 0}
   gameConditions:
@@ -42,14 +53,16 @@ MonoBehaviour:
     cleanBoardBeforeAddNext: 0
     looseDialogue: {fileID: 0}
     doIfLoose: 0
-    gameSecondaryChallenges: []
     inputTutoToShow: 
     victoryConditions:
     - condition: 15
       value: 0
       mustBeDone: 1
+      canDoFromXRestart: -1
+      overrideObjectiveText: 
     defeatConditions: []
     conditionSprite: {fileID: 0}
+    gameSecondaryChallenges: []
   prefillGridWith: '%prefill%'
   prefillGrowWith: 
   endGrowIfNoPrefill: 0

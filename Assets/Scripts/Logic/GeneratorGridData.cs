@@ -16,7 +16,7 @@ public class GeneratorGridData
     public GeneratorGridData()
     {
         grid = new List<GeneratorGridElement[]>();
-        nexts = new GeneratorGridElement[12];
+        nexts = new GeneratorGridElement[nextAmount];
         for (int i = 0; i < nexts.Length; i++)
         {
             nexts[i] = GeneratorGridElement.EMPTY;
@@ -380,7 +380,6 @@ public class GeneratorGridData
         clone.currentScore = currentScore;
         clone.gravityReversed = gravityReversed;
         clone.minGroupSizeToPop = minGroupSizeToPop;
-        //Debug.Log(width);
         return clone;
     }
 
@@ -801,13 +800,11 @@ public class GeneratorGridData
         {
             for (int y = 0; y < height; y++)
             {
-                if (GetElementAt(x, y) == null)
+                // Version où les absorptions absorbent toutes les bouteilles connectées
+                //if (GetElementAt(x, y).IsDanghost() || GetElementAt(x, y).IsBottle())
+                if (GetElementAt(x, y).IsDanghost() || GetElementAt(x, y).IsBottle())
                 {
-                    Debug.Log("oh what the fuck");
-                }
-                if (GetElementAt(x, y).IsDanghost())
-                {
-                    groupIDs[x, y] = x * height + y;
+                        groupIDs[x, y] = x * height + y;
                 }
                 else
                 {
@@ -831,10 +828,12 @@ public class GeneratorGridData
     {
         GeneratorGridElement element1 = GetElementAt(x, y);
         GeneratorGridElement element2 = GetElementAt(x2, y2);
+        // Version où les absorptions absorbent toutes les bouteilles connectées
+        // if ((element1.IsDanghost() || element1.IsBottle()) && (element2.IsDanghost() || element2.IsBottle()) && element1.IsSameColorAs(element2))
 
         if (element1.IsDanghost() && element2.IsDanghost() && element1.IsSameColorAs(element2))
         {
-            if (groupIDs[x2, y2] < groupIDs[x, y])
+                if (groupIDs[x2, y2] < groupIDs[x, y])
             {
                 if (groupIDs[x, y] == x * height + y)
                 {

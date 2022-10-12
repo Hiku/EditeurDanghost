@@ -200,9 +200,9 @@ public class GeneratorGridElement
         switch (type)
         {
             case ElementType.DANGHOST:
-                return "Y" + ((int)color + 1) + (color2 != null ? ("" + ((int)color2 + 1)) : "");
+                return "Y" + ((int)color) + (color2 != null ? ("" + ((int)color2)) : "");
             case ElementType.BOTTLE:
-                return "E" + ((int)color + 1) + (color2 != null ? ("" + ((int)color2 + 1)) : "");
+                return "E" + ((int)color) + (color2 != null ? ("" + ((int)color2)) : "");
             case ElementType.EMPTY:
                 return "";
             case ElementType.GHOST:
@@ -225,9 +225,9 @@ public class GeneratorGridElement
         switch (element[0])
         {
             case 'Y':
-                return Danghost((GridElementColor)(int.Parse("" + element[1]) - 1));
+                return Danghost((GridElementColor)(int.Parse("" + element[1])));
             case 'E':
-                return Bottle((GridElementColor)(int.Parse("" + element[1]) - 1));
+                return Bottle((GridElementColor)(int.Parse("" + element[1])));
             case 'P':
                 return GHOST;
             case 'C':
